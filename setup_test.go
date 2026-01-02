@@ -171,7 +171,7 @@ func TestValidation_RequiredFields(t *testing.T) {
 	}
 }
 
-// Helper functions that simulate validation logic from setup.go
+// Helper functions that simulate validation logic from setup.go.
 
 func validateSecret(secret string) error {
 	if secret == "" {
@@ -224,7 +224,7 @@ func validateRequiredFields(zone, endpoint, secret string) error {
 	return nil
 }
 
-// validationError is a simple error type for validation
+// validationError is a simple error type for validation.
 type validationError struct {
 	msg string
 }

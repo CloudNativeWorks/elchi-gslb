@@ -11,14 +11,14 @@ import (
 	"time"
 )
 
-// DNSSnapshot represents the full DNS snapshot response from Elchi backend
+// DNSSnapshot represents the full DNS snapshot response from Elchi backend.
 type DNSSnapshot struct {
 	Zone        string      `json:"zone"`
 	VersionHash string      `json:"version_hash"`
 	Records     []DNSRecord `json:"records"`
 }
 
-// DNSChangesResponse represents the response from the changes endpoint
+// DNSChangesResponse represents the response from the changes endpoint.
 type DNSChangesResponse struct {
 	Unchanged   bool        `json:"unchanged"`
 	Zone        string      `json:"zone,omitempty"`
@@ -26,17 +26,17 @@ type DNSChangesResponse struct {
 	Records     []DNSRecord `json:"records,omitempty"`
 }
 
-// DNSRecord represents a single DNS record from Elchi
+// DNSRecord represents a single DNS record from Elchi.
 type DNSRecord struct {
-	Name     string   `json:"name"`              // e.g., "listener1.gslb.elchi"
-	Type     string   `json:"type"`              // "A" or "AAAA"
-	TTL      uint32   `json:"ttl"`               // TTL in seconds
-	IPs      []string `json:"ips"`               // List of IP addresses
-	Enabled  bool     `json:"enabled"`           // If false, return CNAME to failover
+	Name     string   `json:"name"`               // e.g., "listener1.gslb.elchi"
+	Type     string   `json:"type"`               // "A" or "AAAA"
+	TTL      uint32   `json:"ttl"`                // TTL in seconds
+	IPs      []string `json:"ips"`                // List of IP addresses
+	Enabled  bool     `json:"enabled"`            // If false, return CNAME to failover
 	Failover string   `json:"failover,omitempty"` // CNAME target when enabled=false
 }
 
-// ElchiClient is the HTTP client for the Elchi DNS API
+// ElchiClient is the HTTP client for the Elchi DNS API.
 type ElchiClient struct {
 	endpoint   string
 	zone       string
@@ -44,7 +44,7 @@ type ElchiClient struct {
 	httpClient *http.Client
 }
 
-// NewElchiClient creates a new Elchi DNS API client
+// NewElchiClient creates a new Elchi DNS API client.
 func NewElchiClient(endpoint, zone, secret string, timeout time.Duration) *ElchiClient {
 	return &ElchiClient{
 		endpoint: strings.TrimRight(endpoint, "/"),
@@ -61,7 +61,7 @@ func NewElchiClient(endpoint, zone, secret string, timeout time.Duration) *Elchi
 	}
 }
 
-// FetchSnapshot fetches the complete DNS snapshot from Elchi backend
+// FetchSnapshot fetches the complete DNS snapshot from Elchi backend.
 func (c *ElchiClient) FetchSnapshot(ctx context.Context) (*DNSSnapshot, error) {
 	// Build request URL
 	u, err := url.Parse(fmt.Sprintf("%s/dns/snapshot", c.endpoint))
@@ -87,7 +87,9 @@ func (c *ElchiClient) FetchSnapshot(ctx context.Context) (*DNSSnapshot, error) {
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	// Check status code
 	if resp.StatusCode != http.StatusOK {
@@ -112,7 +114,7 @@ func (c *ElchiClient) FetchSnapshot(ctx context.Context) (*DNSSnapshot, error) {
 	return &snapshot, nil
 }
 
-// CheckChanges checks for DNS changes since the given version hash
+// CheckChanges checks for DNS changes since the given version hash.
 func (c *ElchiClient) CheckChanges(ctx context.Context, sinceHash string) (*DNSChangesResponse, error) {
 	// Build request URL
 	u, err := url.Parse(fmt.Sprintf("%s/dns/changes", c.endpoint))
@@ -139,7 +141,9 @@ func (c *ElchiClient) CheckChanges(ctx context.Context, sinceHash string) (*DNSC
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	// Check status code
 	// HTTP 304 Not Modified indicates no changes since the given hash
@@ -173,7 +177,7 @@ func (c *ElchiClient) CheckChanges(ctx context.Context, sinceHash string) (*DNSC
 	return &changes, nil
 }
 
-// signRequest adds authentication headers to the request
+// signRequest adds authentication headers to the request.
 func (c *ElchiClient) signRequest(req *http.Request) {
 	req.Header.Set("X-Elchi-Secret", c.secret)
 	req.Header.Set("Accept", "application/json")

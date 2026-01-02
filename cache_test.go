@@ -55,11 +55,11 @@ func TestGet_ARecords(t *testing.T) {
 		VersionHash: "abc123",
 		Records: []DNSRecord{
 			{
-				Name: "test.gslb.elchi",
-				Type: "A",
-				TTL:  300,
-				IPs:  []string{"192.168.1.10", "192.168.1.11"},
-    Enabled: true,
+				Name:    "test.gslb.elchi",
+				Type:    "A",
+				TTL:     300,
+				IPs:     []string{"192.168.1.10", "192.168.1.11"},
+				Enabled: true,
 			},
 		},
 	}
@@ -94,11 +94,11 @@ func TestGet_AAAARecords(t *testing.T) {
 		VersionHash: "abc123",
 		Records: []DNSRecord{
 			{
-				Name: "test.gslb.elchi",
-				Type: "AAAA",
-				TTL:  600,
-				IPs:  []string{"2001:db8::1", "2001:db8::2"},
-    Enabled: true,
+				Name:    "test.gslb.elchi",
+				Type:    "AAAA",
+				TTL:     600,
+				IPs:     []string{"2001:db8::1", "2001:db8::2"},
+				Enabled: true,
 			},
 		},
 	}
@@ -152,11 +152,11 @@ func TestGet_WrongType(t *testing.T) {
 		VersionHash: "abc123",
 		Records: []DNSRecord{
 			{
-				Name: "test.gslb.elchi",
-				Type: "A",
-				TTL:  300,
-				IPs:  []string{"192.168.1.10"},
-    Enabled: true,
+				Name:    "test.gslb.elchi",
+				Type:    "A",
+				TTL:     300,
+				IPs:     []string{"192.168.1.10"},
+				Enabled: true,
 			},
 		},
 	}
@@ -195,11 +195,11 @@ func TestGetVersionHash(t *testing.T) {
 
 func TestBuildDNSRecords_A(t *testing.T) {
 	record := DNSRecord{
-		Name: "test.example.com",
-		Type: "A",
-		TTL:  300,
-		IPs:  []string{"192.168.1.10", "192.168.1.11"},
-  Enabled: true,
+		Name:    "test.example.com",
+		Type:    "A",
+		TTL:     300,
+		IPs:     []string{"192.168.1.10", "192.168.1.11"},
+		Enabled: true,
 	}
 
 	rrs, err := buildDNSRecords(record, 600)
@@ -219,11 +219,11 @@ func TestBuildDNSRecords_A(t *testing.T) {
 
 func TestBuildDNSRecords_DefaultTTL(t *testing.T) {
 	record := DNSRecord{
-		Name: "test.example.com",
-		Type: "A",
-		TTL:  0, // No TTL specified
-		IPs:  []string{"192.168.1.10"},
-  Enabled: true,
+		Name:    "test.example.com",
+		Type:    "A",
+		TTL:     0, // No TTL specified
+		IPs:     []string{"192.168.1.10"},
+		Enabled: true,
 	}
 
 	rrs, err := buildDNSRecords(record, 600)
@@ -239,11 +239,11 @@ func TestBuildDNSRecords_DefaultTTL(t *testing.T) {
 
 func TestBuildDNSRecords_InvalidIP(t *testing.T) {
 	record := DNSRecord{
-		Name: "test.example.com",
-		Type: "A",
-		TTL:  300,
-		IPs:  []string{"invalid-ip", "192.168.1.10"},
-  Enabled: true,
+		Name:    "test.example.com",
+		Type:    "A",
+		TTL:     300,
+		IPs:     []string{"invalid-ip", "192.168.1.10"},
+		Enabled: true,
 	}
 
 	rrs, err := buildDNSRecords(record, 300)
@@ -259,11 +259,11 @@ func TestBuildDNSRecords_InvalidIP(t *testing.T) {
 
 func TestBuildDNSRecords_UnsupportedType(t *testing.T) {
 	record := DNSRecord{
-		Name: "test.example.com",
-		Type: "CNAME",
-		TTL:  300,
-		IPs:  []string{"192.168.1.10"},
-  Enabled: true,
+		Name:    "test.example.com",
+		Type:    "CNAME",
+		TTL:     300,
+		IPs:     []string{"192.168.1.10"},
+		Enabled: true,
 	}
 
 	_, err := buildDNSRecords(record, 300)
@@ -281,11 +281,11 @@ func TestConcurrentAccess(t *testing.T) {
 		VersionHash: "v1",
 		Records: []DNSRecord{
 			{
-				Name: "test.gslb.elchi",
-				Type: "A",
-				TTL:  300,
-				IPs:  []string{"192.168.1.10"},
-    Enabled: true,
+				Name:    "test.gslb.elchi",
+				Type:    "A",
+				TTL:     300,
+				IPs:     []string{"192.168.1.10"},
+				Enabled: true,
 			},
 		},
 	}
@@ -340,11 +340,11 @@ func BenchmarkGet(b *testing.B) {
 		VersionHash: "bench",
 		Records: []DNSRecord{
 			{
-				Name: "test.gslb.elchi",
-				Type: "A",
-				TTL:  300,
-				IPs:  []string{"192.168.1.10", "192.168.1.11", "192.168.1.12"},
-    Enabled: true,
+				Name:    "test.gslb.elchi",
+				Type:    "A",
+				TTL:     300,
+				IPs:     []string{"192.168.1.10", "192.168.1.11", "192.168.1.12"},
+				Enabled: true,
 			},
 		},
 	}
@@ -364,18 +364,18 @@ func BenchmarkReplaceFromSnapshot(b *testing.B) {
 		VersionHash: "bench",
 		Records: []DNSRecord{
 			{
-				Name: "test1.gslb.elchi",
-				Type: "A",
-				TTL:  300,
-				IPs:  []string{"192.168.1.10"},
-    Enabled: true,
+				Name:    "test1.gslb.elchi",
+				Type:    "A",
+				TTL:     300,
+				IPs:     []string{"192.168.1.10"},
+				Enabled: true,
 			},
 			{
-				Name: "test2.gslb.elchi",
-				Type: "A",
-				TTL:  300,
-				IPs:  []string{"192.168.2.10"},
-    Enabled: true,
+				Name:    "test2.gslb.elchi",
+				Type:    "A",
+				TTL:     300,
+				IPs:     []string{"192.168.2.10"},
+				Enabled: true,
 			},
 		},
 	}
@@ -483,11 +483,11 @@ func TestCache_CNAME_Failover_Integration(t *testing.T) {
 				Failover: "service1-backup.gslb.elchi",
 			},
 			{
-				Name:     "service1-backup.gslb.elchi",
-				Type:     "A",
-				TTL:      30,
-				IPs:      []string{"192.168.2.10", "192.168.2.11"},
-				Enabled:  true,
+				Name:    "service1-backup.gslb.elchi",
+				Type:    "A",
+				TTL:     30,
+				IPs:     []string{"192.168.2.10", "192.168.2.11"},
+				Enabled: true,
 			},
 		},
 	}
@@ -519,7 +519,7 @@ func TestCache_CNAME_Failover_Integration(t *testing.T) {
 	}
 }
 
-// Helper function for string contains check
+// Helper function for string contains check.
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
 		(len(s) > 0 && len(substr) > 0 && stringContains(s, substr)))

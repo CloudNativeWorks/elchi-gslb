@@ -93,7 +93,9 @@ func TestHandleNotify_WithDeletes(t *testing.T) {
 			},
 		},
 	}
-	e.cache.ReplaceFromSnapshot(snapshot, 300)
+	if err := e.cache.ReplaceFromSnapshot(snapshot, 300); err != nil {
+		t.Fatalf("Failed to replace snapshot: %v", err)
+	}
 
 	// Create webhook server
 	ws := NewWebhookServer(e, ":8053")
@@ -124,7 +126,9 @@ func TestHandleNotify_WithDeletes(t *testing.T) {
 	}
 
 	var resp NotifyResponse
-	json.Unmarshal(rr.Body.Bytes(), &resp)
+	if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
 
 	if resp.Deleted != 1 {
 		t.Errorf("Expected 1 deleted, got %d", resp.Deleted)
@@ -185,7 +189,9 @@ func TestHandleHealth_Healthy(t *testing.T) {
 			{Name: "test.gslb.elchi", Type: "A", TTL: 300, IPs: []string{"192.168.1.10"}, Enabled: true},
 		},
 	}
-	e.cache.ReplaceFromSnapshot(snapshot, 300)
+	if err := e.cache.ReplaceFromSnapshot(snapshot, 300); err != nil {
+		t.Fatalf("Failed to replace snapshot: %v", err)
+	}
 
 	ws := NewWebhookServer(e, ":8053")
 
@@ -200,7 +206,9 @@ func TestHandleHealth_Healthy(t *testing.T) {
 	}
 
 	var resp HealthResponse
-	json.Unmarshal(rr.Body.Bytes(), &resp)
+	if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
 
 	if resp.Status != "healthy" {
 		t.Errorf("Expected status 'healthy', got '%s'", resp.Status)
@@ -240,7 +248,9 @@ func TestHandleHealth_Degraded(t *testing.T) {
 	}
 
 	var resp HealthResponse
-	json.Unmarshal(rr.Body.Bytes(), &resp)
+	if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
 
 	if resp.Status != "degraded" {
 		t.Errorf("Expected status 'degraded', got '%s'", resp.Status)
@@ -269,7 +279,9 @@ func TestHandleRecords_All(t *testing.T) {
 			{Name: "test3.gslb.elchi", Type: "AAAA", TTL: 300, IPs: []string{"2001:db8::1"}, Enabled: true},
 		},
 	}
-	e.cache.ReplaceFromSnapshot(snapshot, 300)
+	if err := e.cache.ReplaceFromSnapshot(snapshot, 300); err != nil {
+		t.Fatalf("Failed to replace snapshot: %v", err)
+	}
 
 	ws := NewWebhookServer(e, ":8053")
 
@@ -285,7 +297,9 @@ func TestHandleRecords_All(t *testing.T) {
 	}
 
 	var resp RecordsResponse
-	json.Unmarshal(rr.Body.Bytes(), &resp)
+	if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
 
 	if resp.Count != 3 {
 		t.Errorf("Expected 3 records, got %d", resp.Count)
@@ -314,7 +328,9 @@ func TestHandleRecords_Filtered(t *testing.T) {
 			{Name: "db.gslb.elchi", Type: "AAAA", TTL: 300, IPs: []string{"2001:db8::1"}, Enabled: true},
 		},
 	}
-	e.cache.ReplaceFromSnapshot(snapshot, 300)
+	if err := e.cache.ReplaceFromSnapshot(snapshot, 300); err != nil {
+		t.Fatalf("Failed to replace snapshot: %v", err)
+	}
 
 	ws := NewWebhookServer(e, ":8053")
 
@@ -327,7 +343,9 @@ func TestHandleRecords_Filtered(t *testing.T) {
 	handler(rr, req)
 
 	var resp RecordsResponse
-	json.Unmarshal(rr.Body.Bytes(), &resp)
+	if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
 
 	if resp.Count != 1 {
 		t.Errorf("Expected 1 filtered record, got %d", resp.Count)
@@ -341,7 +359,9 @@ func TestHandleRecords_Filtered(t *testing.T) {
 	handler(rr2, req2)
 
 	var resp2 RecordsResponse
-	json.Unmarshal(rr2.Body.Bytes(), &resp2)
+	if err := json.Unmarshal(rr2.Body.Bytes(), &resp2); err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
 
 	if resp2.Count != 1 {
 		t.Errorf("Expected 1 AAAA record, got %d", resp2.Count)
@@ -354,7 +374,7 @@ func TestSyncStatus_ThreadSafety(t *testing.T) {
 	// Concurrent updates
 	done := make(chan bool)
 	for i := 0; i < 10; i++ {
-		go func(id int) {
+		go func() {
 			for j := 0; j < 100; j++ {
 				if j%2 == 0 {
 					ss.Update("success", nil)
@@ -364,7 +384,7 @@ func TestSyncStatus_ThreadSafety(t *testing.T) {
 				ss.Get()
 			}
 			done <- true
-		}(i)
+		}()
 	}
 
 	// Wait for all goroutines

@@ -13,7 +13,7 @@ import (
 
 var log = clog.NewWithPlugin("elchi")
 
-// Elchi is the main plugin structure
+// Elchi is the main plugin structure.
 type Elchi struct {
 	Next plugin.Handler
 	Fall fall.F
@@ -39,7 +39,7 @@ type Elchi struct {
 	shutdownCancel context.CancelFunc
 }
 
-// ServeDNS implements the plugin.Handler interface
+// ServeDNS implements the plugin.Handler interface.
 func (e *Elchi) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
 	state := request.Request{W: w, Req: r}
 
@@ -120,7 +120,7 @@ func (e *Elchi) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) 
 	return dns.RcodeSuccess, nil
 }
 
-// Name implements the plugin.Handler interface
+// Name implements the plugin.Handler interface.
 func (e *Elchi) Name() string {
 	return "elchi"
 }
@@ -134,7 +134,7 @@ func (e *Elchi) Ready() bool {
 	return e.cache.GetVersionHash() != ""
 }
 
-// InitClient initializes the Elchi backend client and starts the background sync
+// InitClient initializes the Elchi backend client and starts the background sync.
 func (e *Elchi) InitClient() error {
 	e.client = NewElchiClient(e.Endpoint, e.Zone, e.Secret, e.Timeout)
 	e.cache = NewRecordCache(e.Zone)
@@ -177,8 +177,7 @@ func (e *Elchi) InitClient() error {
 	return nil
 }
 
-// backgroundSync periodically checks for DNS changes from the elchi backend
-// It respects the shutdown context for graceful termination
+// It respects the shutdown context for graceful termination.
 func (e *Elchi) backgroundSync() {
 	ticker := time.NewTicker(e.SyncInterval)
 	defer ticker.Stop()
@@ -269,8 +268,8 @@ func (e *Elchi) backgroundSync() {
 	}
 }
 
-// Shutdown performs graceful shutdown of the plugin
-// This is called by CoreDNS during plugin reload or server shutdown
+// Shutdown performs graceful shutdown of the plugin.
+// This is called by CoreDNS during plugin reload or server shutdown.
 func (e *Elchi) Shutdown() error {
 	log.Info("Shutting down Elchi plugin")
 

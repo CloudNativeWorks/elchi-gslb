@@ -15,7 +15,7 @@ import (
 	"github.com/miekg/dns"
 )
 
-// TestIntegration_FullLifecycle tests the complete plugin lifecycle
+// TestIntegration_FullLifecycle tests the complete plugin lifecycle.
 func TestIntegration_FullLifecycle(t *testing.T) {
 	// Setup mock controller
 	controller := newMockController()
@@ -24,11 +24,11 @@ func TestIntegration_FullLifecycle(t *testing.T) {
 		VersionHash: "v1",
 		Records: []DNSRecord{
 			{
-				Name: "test.gslb.elchi",
-				Type: "A",
-				TTL:  300,
-				IPs:  []string{"192.168.1.10", "192.168.1.11"},
-    Enabled: true,
+				Name:    "test.gslb.elchi",
+				Type:    "A",
+				TTL:     300,
+				IPs:     []string{"192.168.1.10", "192.168.1.11"},
+				Enabled: true,
 			},
 		},
 	})
@@ -94,11 +94,11 @@ func TestIntegration_FullLifecycle(t *testing.T) {
 		VersionHash: "v2",
 		Records: []DNSRecord{
 			{
-				Name: "test.gslb.elchi",
-				Type: "A",
-				TTL:  300,
-				IPs:  []string{"192.168.2.20"},
-    Enabled: true,
+				Name:    "test.gslb.elchi",
+				Type:    "A",
+				TTL:     300,
+				IPs:     []string{"192.168.2.20"},
+				Enabled: true,
 			},
 		},
 	})
@@ -159,7 +159,7 @@ func TestIntegration_FullLifecycle(t *testing.T) {
 	}
 }
 
-// TestIntegration_ErrorRecovery tests error handling
+// TestIntegration_ErrorRecovery tests error handling.
 func TestIntegration_ErrorRecovery(t *testing.T) {
 	// Setup mock controller that returns errors
 	controller := newMockController()
@@ -168,11 +168,11 @@ func TestIntegration_ErrorRecovery(t *testing.T) {
 		VersionHash: "v1",
 		Records: []DNSRecord{
 			{
-				Name: "test.gslb.elchi",
-				Type: "A",
-				TTL:  300,
-				IPs:  []string{"192.168.1.10"},
-    Enabled: true,
+				Name:    "test.gslb.elchi",
+				Type:    "A",
+				TTL:     300,
+				IPs:     []string{"192.168.1.10"},
+				Enabled: true,
 			},
 		},
 	})
@@ -249,11 +249,11 @@ func TestIntegration_ErrorRecovery(t *testing.T) {
 		VersionHash: "v2",
 		Records: []DNSRecord{
 			{
-				Name: "test.gslb.elchi",
-				Type: "A",
-				TTL:  300,
-				IPs:  []string{"192.168.2.20"},
-    Enabled: true,
+				Name:    "test.gslb.elchi",
+				Type:    "A",
+				TTL:     300,
+				IPs:     []string{"192.168.2.20"},
+				Enabled: true,
 			},
 		},
 	})
@@ -290,7 +290,7 @@ func TestIntegration_ErrorRecovery(t *testing.T) {
 	}
 }
 
-// TestIntegration_ConcurrentQueries tests concurrent DNS queries
+// TestIntegration_ConcurrentQueries tests concurrent DNS queries.
 func TestIntegration_ConcurrentQueries(t *testing.T) {
 	// Setup mock controller
 	controller := newMockController()
@@ -299,11 +299,11 @@ func TestIntegration_ConcurrentQueries(t *testing.T) {
 		VersionHash: "v1",
 		Records: []DNSRecord{
 			{
-				Name: "test.gslb.elchi",
-				Type: "A",
-				TTL:  300,
-				IPs:  []string{"192.168.1.10"},
-    Enabled: true,
+				Name:    "test.gslb.elchi",
+				Type:    "A",
+				TTL:     300,
+				IPs:     []string{"192.168.1.10"},
+				Enabled: true,
 			},
 		},
 	})
@@ -349,7 +349,7 @@ func TestIntegration_ConcurrentQueries(t *testing.T) {
 			code, err := e.ServeDNS(context.Background(), rec, m)
 
 			if err != nil {
-				errors <- fmt.Errorf("ServeDNS failed: %v", err)
+				errors <- fmt.Errorf("ServeDNS failed: %w", err)
 				return
 			}
 
@@ -374,7 +374,7 @@ func TestIntegration_ConcurrentQueries(t *testing.T) {
 	}
 }
 
-// TestIntegration_MultiZone tests behavior with queries for different zones
+// TestIntegration_MultiZone tests behavior with queries for different zones.
 func TestIntegration_MultiZone(t *testing.T) {
 	// Setup mock controller
 	controller := newMockController()
@@ -383,11 +383,11 @@ func TestIntegration_MultiZone(t *testing.T) {
 		VersionHash: "v1",
 		Records: []DNSRecord{
 			{
-				Name: "test.gslb.elchi",
-				Type: "A",
-				TTL:  300,
-				IPs:  []string{"192.168.1.10"},
-    Enabled: true,
+				Name:    "test.gslb.elchi",
+				Type:    "A",
+				TTL:     300,
+				IPs:     []string{"192.168.1.10"},
+				Enabled: true,
 			},
 		},
 	})
@@ -449,7 +449,7 @@ func TestIntegration_MultiZone(t *testing.T) {
 	}
 }
 
-// TestIntegration_ChangesNotModified tests 304 Not Modified response
+// TestIntegration_ChangesNotModified tests 304 Not Modified response.
 func TestIntegration_ChangesNotModified(t *testing.T) {
 	// Setup mock controller
 	controller := newMockController()
@@ -483,7 +483,7 @@ func TestIntegration_ChangesNotModified(t *testing.T) {
 	}
 }
 
-// mockController is a test HTTP handler that simulates the Elchi controller
+// mockController is a test HTTP handler that simulates the Elchi controller.
 type mockController struct {
 	mu       sync.RWMutex
 	snapshot *DNSSnapshot

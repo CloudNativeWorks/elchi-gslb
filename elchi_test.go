@@ -22,11 +22,11 @@ func TestServeDNS_InZone(t *testing.T) {
 		VersionHash: "test123",
 		Records: []DNSRecord{
 			{
-				Name: "test.gslb.elchi",
-				Type: "A",
-				TTL:  300,
-				IPs:  []string{"192.168.1.10"},
-    Enabled: true,
+				Name:    "test.gslb.elchi",
+				Type:    "A",
+				TTL:     300,
+				IPs:     []string{"192.168.1.10"},
+				Enabled: true,
 			},
 		},
 	}
@@ -211,11 +211,11 @@ func TestReady(t *testing.T) {
 					VersionHash: "abc123",
 					Records: []DNSRecord{
 						{
-							Name: "test.gslb.elchi",
-							Type: "A",
-							TTL:  300,
-							IPs:  []string{"192.168.1.10"},
-       Enabled: true,
+							Name:    "test.gslb.elchi",
+							Type:    "A",
+							TTL:     300,
+							IPs:     []string{"192.168.1.10"},
+							Enabled: true,
 						},
 					},
 				}
@@ -236,13 +236,17 @@ func TestReady(t *testing.T) {
 	}
 }
 
-// testResponseWriter is a mock dns.ResponseWriter for testing
+// testResponseWriter is a mock dns.ResponseWriter for testing.
 type testResponseWriter struct {
 	msg *dns.Msg
 }
 
-func (t *testResponseWriter) LocalAddr() net.Addr  { return &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 53} }
-func (t *testResponseWriter) RemoteAddr() net.Addr { return &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 12345} }
+func (t *testResponseWriter) LocalAddr() net.Addr {
+	return &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 53}
+}
+func (t *testResponseWriter) RemoteAddr() net.Addr {
+	return &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 12345}
+}
 func (t *testResponseWriter) WriteMsg(m *dns.Msg) error {
 	t.msg = m
 	return nil

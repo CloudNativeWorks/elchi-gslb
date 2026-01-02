@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// SyncStatus tracks the last sync operation status
+// SyncStatus tracks the last sync operation status.
 type SyncStatus struct {
 	mu             sync.RWMutex
 	lastSyncTime   time.Time
@@ -19,7 +19,7 @@ type SyncStatus struct {
 	lastError      string
 }
 
-// Update updates the sync status
+// Update updates the sync status.
 func (s *SyncStatus) Update(status string, err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -32,21 +32,21 @@ func (s *SyncStatus) Update(status string, err error) {
 	}
 }
 
-// Get returns the current sync status
+// Get returns the current sync status.
 func (s *SyncStatus) Get() (time.Time, string, string) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.lastSyncTime, s.lastSyncStatus, s.lastError
 }
 
-// WebhookServer manages the HTTP server for webhook endpoints
+// WebhookServer manages the HTTP server for webhook endpoints.
 type WebhookServer struct {
 	elchi  *Elchi
 	server *http.Server
 	mux    *http.ServeMux
 }
 
-// NewWebhookServer creates a new webhook server
+// NewWebhookServer creates a new webhook server.
 func NewWebhookServer(elchi *Elchi, addr string) *WebhookServer {
 	mux := http.NewServeMux()
 
@@ -69,7 +69,7 @@ func NewWebhookServer(elchi *Elchi, addr string) *WebhookServer {
 	return ws
 }
 
-// Start starts the webhook server in a goroutine
+// Start starts the webhook server in a goroutine.
 func (ws *WebhookServer) Start() error {
 	go func() {
 		log.Infof("Starting webhook server on %s", ws.server.Addr)
@@ -80,13 +80,12 @@ func (ws *WebhookServer) Start() error {
 	return nil
 }
 
-// Stop gracefully stops the webhook server
+// Stop gracefully stops the webhook server.
 func (ws *WebhookServer) Stop(ctx context.Context) error {
 	return ws.server.Shutdown(ctx)
 }
 
-// authMiddleware validates the X-Elchi-Secret header using constant-time comparison
-// to prevent timing attacks
+// to prevent timing attacks.
 func (ws *WebhookServer) authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		secret := r.Header.Get("X-Elchi-Secret")
@@ -105,20 +104,20 @@ func (ws *WebhookServer) authMiddleware(next http.HandlerFunc) http.HandlerFunc 
 	}
 }
 
-// NotifyRequest represents the POST /notify request body
+// NotifyRequest represents the POST /notify request body.
 type NotifyRequest struct {
 	Records []DNSRecord    `json:"records,omitempty"`
 	Deletes []DeleteRecord `json:"deletes,omitempty"`
 }
 
-// NotifyResponse represents the POST /notify response
+// NotifyResponse represents the POST /notify response.
 type NotifyResponse struct {
 	Status  string `json:"status"`
 	Updated int    `json:"updated"`
 	Deleted int    `json:"deleted"`
 }
 
-// handleNotify handles POST /notify endpoint for instant updates
+// handleNotify handles POST /notify endpoint for instant updates.
 func (ws *WebhookServer) handleNotify(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -175,7 +174,7 @@ func (ws *WebhookServer) handleNotify(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// HealthResponse represents the GET /health response
+// HealthResponse represents the GET /health response.
 type HealthResponse struct {
 	Status         string `json:"status"`
 	Zone           string `json:"zone"`
@@ -186,7 +185,7 @@ type HealthResponse struct {
 	Error          string `json:"error,omitempty"`
 }
 
-// handleHealth handles GET /health endpoint
+// handleHealth handles GET /health endpoint.
 func (ws *WebhookServer) handleHealth(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -225,7 +224,7 @@ func (ws *WebhookServer) handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// RecordsResponse represents the GET /records response
+// RecordsResponse represents the GET /records response.
 type RecordsResponse struct {
 	Zone        string      `json:"zone"`
 	VersionHash string      `json:"version_hash"`
@@ -233,7 +232,7 @@ type RecordsResponse struct {
 	Records     []DNSRecord `json:"records"`
 }
 
-// handleRecords handles GET /records endpoint
+// handleRecords handles GET /records endpoint.
 func (ws *WebhookServer) handleRecords(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)

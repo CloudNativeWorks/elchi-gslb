@@ -1,3 +1,4 @@
+// Package elchi implements a CoreDNS plugin for GSLB DNS responses.
 package elchi
 
 import (
@@ -10,16 +11,21 @@ import (
 	"github.com/miekg/dns"
 )
 
-// RecordCache is a thread-safe cache for DNS records
+const (
+	// RecordTypeAAAA represents the AAAA record type string.
+	RecordTypeAAAA = "AAAA"
+)
+
+// RecordCache is a thread-safe cache for DNS records.
 type RecordCache struct {
 	mu          sync.RWMutex
 	zone        string
 	versionHash string
-	records     map[string]map[uint16][]dns.RR // domain -> qtype -> []RR
 	updatedAt   time.Time
+	records     map[string]map[uint16][]dns.RR // domain -> qtype -> []RR
 }
 
-// NewRecordCache creates a new record cache for the given zone
+// NewRecordCache creates a new record cache for the given zone.
 func NewRecordCache(zone string) *RecordCache {
 	return &RecordCache{
 		zone:    zone,
@@ -27,7 +33,7 @@ func NewRecordCache(zone string) *RecordCache {
 	}
 }
 
-// ReplaceFromSnapshot atomically replaces the entire cache from a DNS snapshot
+// ReplaceFromSnapshot atomically replaces the entire cache from a DNS snapshot.
 func (c *RecordCache) ReplaceFromSnapshot(snapshot *DNSSnapshot, defaultTTL uint32) error {
 	if snapshot == nil {
 		return fmt.Errorf("snapshot is nil")
@@ -88,7 +94,7 @@ func (c *RecordCache) ReplaceFromSnapshot(snapshot *DNSSnapshot, defaultTTL uint
 	return nil
 }
 
-// Get retrieves pre-built dns.RR objects for a query
+// Get retrieves pre-built dns.RR objects for a query.
 func (c *RecordCache) Get(qname string, qtype uint16) []dns.RR {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -113,21 +119,21 @@ func (c *RecordCache) Get(qname string, qtype uint16) []dns.RR {
 	return result
 }
 
-// GetVersionHash returns the current version hash
+// GetVersionHash returns the current version hash.
 func (c *RecordCache) GetVersionHash() string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.versionHash
 }
 
-// Count returns the total number of unique domains in the cache
+// Count returns the total number of unique domains in the cache.
 func (c *RecordCache) Count() int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return len(c.records)
 }
 
-// Update merges new records into the cache (used by webhook /notify endpoint)
+// Update merges new records into the cache (used by webhook /notify endpoint).
 func (c *RecordCache) Update(records []DNSRecord, defaultTTL uint32) error {
 	if len(records) == 0 {
 		return nil
@@ -183,7 +189,7 @@ func (c *RecordCache) Update(records []DNSRecord, defaultTTL uint32) error {
 	return nil
 }
 
-// Delete removes specific records from the cache (used by webhook /notify endpoint)
+// Delete removes specific records from the cache (used by webhook /notify endpoint).
 func (c *RecordCache) Delete(deletes []DeleteRecord) error {
 	if len(deletes) == 0 {
 		return nil
@@ -201,7 +207,7 @@ func (c *RecordCache) Delete(deletes []DeleteRecord) error {
 		switch strings.ToUpper(del.Type) {
 		case "A":
 			qtype = dns.TypeA
-		case "AAAA":
+		case RecordTypeAAAA:
 			qtype = dns.TypeAAAA
 		default:
 			log.Warningf("Unsupported record type for deletion: %s", del.Type)
@@ -237,7 +243,7 @@ func (c *RecordCache) Delete(deletes []DeleteRecord) error {
 	return nil
 }
 
-// GetAllRecords returns all cached records (for /records endpoint)
+// GetAllRecords returns all cached records (for /records endpoint).
 func (c *RecordCache) GetAllRecords() []DNSRecord {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -285,13 +291,13 @@ func (c *RecordCache) GetAllRecords() []DNSRecord {
 	return records
 }
 
-// DeleteRecord represents a record to be deleted
+// DeleteRecord represents a record to be deleted.
 type DeleteRecord struct {
 	Name string `json:"name"`
 	Type string `json:"type"`
 }
 
-// buildDNSRecords converts a DNSRecord from API to []dns.RR objects
+// buildDNSRecords converts a DNSRecord from API to []dns.RR objects.
 func buildDNSRecords(record DNSRecord, defaultTTL uint32) ([]dns.RR, error) {
 	var rrs []dns.RR
 
@@ -355,7 +361,7 @@ func buildDNSRecords(record DNSRecord, defaultTTL uint32) ([]dns.RR, error) {
 			rrs = append(rrs, rr)
 		}
 
-	case "AAAA":
+	case RecordTypeAAAA:
 		for _, ipStr := range record.IPs {
 			ip := net.ParseIP(ipStr)
 			if ip == nil {
@@ -392,7 +398,7 @@ func buildDNSRecords(record DNSRecord, defaultTTL uint32) ([]dns.RR, error) {
 	return rrs, nil
 }
 
-// normalizeDomain normalizes a domain name to FQDN format
+// normalizeDomain normalizes a domain name to FQDN format.
 func normalizeDomain(domain string) string {
 	// Convert to lowercase and trim spaces
 	normalized := strings.ToLower(strings.TrimSpace(domain))

@@ -10,12 +10,12 @@ import (
 	"github.com/coredns/coredns/plugin"
 )
 
-// init registers this plugin within the Caddy plugin framework
+// init registers this plugin within the Caddy plugin framework.
 func init() {
 	plugin.Register("elchi", setup)
 }
 
-// setup is the function that gets called when the config parser sees the "elchi" token
+// setup is the function that gets called when the config parser sees the "elchi" token.
 func setup(c *caddy.Controller) error {
 	e, err := parseElchi(c)
 	if err != nil {
@@ -35,7 +35,9 @@ func setup(c *caddy.Controller) error {
 	return nil
 }
 
-// parseElchi parses the Corefile configuration for the elchi plugin
+// parseElchi parses the Corefile configuration for the elchi plugin.
+//
+//nolint:gocyclo // Config parsing is inherently complex.
 func parseElchi(c *caddy.Controller) (*Elchi, error) {
 	e := &Elchi{
 		TTL:           300,              // default TTL (5 minutes)
@@ -150,7 +152,7 @@ func parseElchi(c *caddy.Controller) (*Elchi, error) {
 
 	// Initialize the client
 	if err := e.InitClient(); err != nil {
-		return nil, fmt.Errorf("failed to initialize elchi client: %v", err)
+		return nil, fmt.Errorf("failed to initialize elchi client: %w", err)
 	}
 
 	return e, nil
