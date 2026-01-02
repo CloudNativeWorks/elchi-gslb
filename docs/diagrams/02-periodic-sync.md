@@ -14,27 +14,20 @@ sequenceDiagram
 
     loop Every sync_interval (default: 5 minutes)
         Timer->>Plugin: Trigger sync
-        activate Plugin
 
         Plugin->>Cache: GetVersionHash()
-        activate Cache
         Cache-->>Plugin: current_hash (e.g., "abc123")
-        deactivate Cache
 
         Plugin->>Client: CheckChanges(ctx, current_hash)
-        activate Client
 
         Client->>Controller: GET /dns/changes?zone=gslb.elchi&since=abc123<br/>X-Elchi-Secret: <secret>
-        activate Controller
 
         Controller->>Controller: Compute current hash
 
         alt No Changes (Hash Matches)
             Controller-->>Client: 304 Not Modified
-            deactivate Controller
 
             Client-->>Plugin: DNSChangesResponse{Unchanged: true}
-            deactivate Client
 
             Plugin->>Plugin: Log "No changes detected"
             Plugin->>Plugin: Update sync status: "success"
@@ -44,20 +37,16 @@ sequenceDiagram
         else Has Changes (Hash Different)
             Controller->>Controller: Generate full snapshot
             Controller-->>Client: 200 OK<br/>{unchanged: false, version_hash: "xyz789", records[]}
-            deactivate Controller
 
             Client-->>Plugin: DNSChangesResponse with new data
-            deactivate Client
 
             Plugin->>Cache: ReplaceFromSnapshot(new_data)
-            activate Cache
 
             Cache->>Cache: Clear old cache
             Cache->>Cache: Build dns.RR objects<br/>for each record
             Cache->>Cache: Store new version_hash
 
             Cache-->>Plugin: Success
-            deactivate Cache
 
             Plugin->>Plugin: Log "Updated %d records"
             Plugin->>Plugin: Update sync status: "success"
@@ -67,10 +56,8 @@ sequenceDiagram
 
         else Controller Error
             Controller-->>Client: 500 Error / Timeout / Network Error
-            deactivate Controller
 
             Client-->>Plugin: Error
-            deactivate Client
 
             Plugin->>Plugin: Log error:<br/>"Sync failed: <error>"
             Plugin->>Plugin: Update sync status: "failed"
@@ -80,7 +67,6 @@ sequenceDiagram
 
         end
 
-        deactivate Plugin
     end
 
     Note over Timer,Controller: DNS queries continue unaffected

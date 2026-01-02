@@ -13,10 +13,8 @@ sequenceDiagram
     Note over Client,Next: DNS Query Handling
 
     Client->>CoreDNS: DNS Query<br/>test.gslb.elchi A?
-    activate CoreDNS
 
     CoreDNS->>Plugin: ServeDNS(ctx, qname, qtype)
-    activate Plugin
 
     Plugin->>Plugin: Check if qname in our zone
 
@@ -24,14 +22,12 @@ sequenceDiagram
         Plugin->>Plugin: Extract qname and qtype
 
         Plugin->>Cache: Get(qname, qtype)
-        activate Cache
 
         Cache->>Cache: Build cache key<br/>"test.gslb.elchi:A"
         Cache->>Cache: Lookup in map
 
         alt Record Found in Cache
             Cache-->>Plugin: []dns.RR (pre-built records)
-            deactivate Cache
 
             Plugin->>Plugin: Build DNS response<br/>- Set authoritative flag<br/>- Add RRs to answer section
 
@@ -42,7 +38,6 @@ sequenceDiagram
 
         else Record Not Found
             Cache-->>Plugin: nil (not found)
-            deactivate Cache
 
             Plugin->>Plugin: Build NXDOMAIN response<br/>- Set authoritative flag<br/>- Empty answer section
 
@@ -55,12 +50,10 @@ sequenceDiagram
 
     else Query is NOT for our zone (e.g., example.com)
         Plugin->>Next: Delegate to next plugin
-        activate Next
 
         Next->>Next: Handle query<br/>(forward, cache, etc.)
         Next-->>Plugin: Response
 
-        deactivate Next
 
         Plugin->>CoreDNS: Pass through response
         CoreDNS-->>Client: Response from next plugin
@@ -69,8 +62,6 @@ sequenceDiagram
 
     end
 
-    deactivate Plugin
-    deactivate CoreDNS
 
     Note over Client,Next: Cache lookup is very fast (<100μs)<br/>Pre-built RRs eliminate parsing overhead
 ```

@@ -13,7 +13,6 @@ sequenceDiagram
     Note over User,DNS: Critical Change Scenario
 
     User->>Controller: Update listener IP<br/>(e.g., failover)
-    activate Controller
 
     Controller->>Controller: Update database
     Controller->>Controller: Compute new version_hash
@@ -21,7 +20,6 @@ sequenceDiagram
     Note over Controller: Controller decides to push update
 
     Controller->>Webhook: POST /notify<br/>X-Elchi-Secret: <secret>
-    activate Webhook
 
     Note over Webhook: Payload:<br/>{<br/>  "records": [{name, type, ttl, ips}],<br/>  "deletes": [{name, type}]<br/>}
 
@@ -29,7 +27,6 @@ sequenceDiagram
 
     alt Valid Secret
         Webhook->>Cache: UpdateFromNotification(payload)
-        activate Cache
 
         alt Has Records to Update
             Cache->>Cache: For each record:<br/>Build dns.RR objects
@@ -43,33 +40,26 @@ sequenceDiagram
         end
 
         Cache-->>Webhook: Success (updated: N, deleted: M)
-        deactivate Cache
 
         Webhook-->>Controller: 200 OK<br/>{status: "ok", updated: N, deleted: M}
-        deactivate Webhook
 
         Controller->>Controller: Log success
         Controller-->>User: Change applied
-        deactivate Controller
 
         Note over DNS: New DNS queries now return updated IPs<br/>Propagation time: < 1 second
 
     else Invalid Secret
         Webhook-->>Controller: 401 Unauthorized
-        deactivate Webhook
 
         Controller->>Controller: Log authentication failure
         Controller-->>User: Error
-        deactivate Controller
 
     else Webhook Server Down
         Controller->>Webhook: POST /notify (timeout)
         Webhook-->>Controller: Connection refused / Timeout
-        deactivate Webhook
 
         Controller->>Controller: Log warning:<br/>"Webhook failed, will sync on next poll"
         Controller-->>User: Change saved<br/>(will propagate via periodic sync)
-        deactivate Controller
 
         Note over Cache: Periodic sync (within 5 min)<br/>will pick up changes
 

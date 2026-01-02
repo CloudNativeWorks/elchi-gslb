@@ -27,7 +27,6 @@ sequenceDiagram
         Note over Timer,Client: Degraded Operation
 
         Timer->>Plugin: Sync trigger
-        activate Plugin
 
         Plugin->>Controller: GET /dns/changes
         Controller-->>Plugin: Timeout / Connection refused
@@ -40,30 +39,23 @@ sequenceDiagram
 
         Plugin->>Plugin: DO NOT clear cache<br/>DO NOT return error<br/>DO NOT stop serving
 
-        deactivate Plugin
 
         Client->>Plugin: DNS query (during outage)
-        activate Plugin
 
         Plugin->>Cache: Get records (stale but valid)
-        activate Cache
         Cache-->>Plugin: Stale records
-        deactivate Cache
 
         Plugin-->>Client: DNS response (stale data)
 
         Note over Client: Client receives valid response<br/>Application continues working
 
-        deactivate Plugin
 
         Note over Plugin: Health endpoint shows degraded state
 
         Client->>Plugin: GET /health
-        activate Plugin
 
         Plugin-->>Client: 503 Service Unavailable<br/>{<br/>  "status": "degraded",<br/>  "last_sync_status": "failed",<br/>  "error": "connection timeout"<br/>}
 
-        deactivate Plugin
     end
 
     Note over Timer,Client: Multiple Failed Sync Attempts
@@ -85,30 +77,24 @@ sequenceDiagram
         Note over Timer,Client: Recovery
 
         Timer->>Plugin: Sync trigger
-        activate Plugin
 
         Plugin->>Controller: GET /dns/changes?since=old_hash
-        activate Controller
 
         Controller->>Controller: New data available
 
         Controller-->>Plugin: 200 OK<br/>{version_hash: "new", records: [...]}
-        deactivate Controller
 
         Plugin->>Cache: ReplaceFromSnapshot(new_data)
-        activate Cache
 
         Cache->>Cache: Clear old (stale) cache
         Cache->>Cache: Load fresh records
 
         Cache-->>Plugin: Success
-        deactivate Cache
 
         Plugin->>Plugin: Log info:<br/>"Recovered from degraded state"
         Plugin->>Plugin: Update sync_status = "success"
         Plugin->>Plugin: Reset elchi_sync_failure_total
 
-        deactivate Plugin
 
         Note over Plugin: System fully recovered
 
