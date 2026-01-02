@@ -88,6 +88,13 @@ issues:
         - goconst
         - errcheck  # Allow unchecked errors in tests
         - unparam   # Allow unused params in test helpers
+        - gocyclo   # Allow complex test functions
+
+    # Exclude shadow warnings in test files
+    - path: _test\.go
+      text: "shadow:"
+      linters:
+        - govet
 
     # Exclude generated files
     - path: ".*\\.pb\\.go"
