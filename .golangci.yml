@@ -1,0 +1,98 @@
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - errcheck      # Check for unchecked errors
+    - gosimple      # Simplify code
+    - govet         # Vet examines Go source code
+    - ineffassign   # Detect ineffectual assignments
+    - staticcheck   # Static analysis
+    - typecheck     # Type-check Go code
+    - unused        # Check for unused constants, variables, functions and types
+    - gofmt         # Check whether code was gofmt-ed
+    - goimports     # Check import statements are formatted
+    - misspell      # Finds commonly misspelled words
+    - gocritic      # Provides diagnostics that check for bugs, performance and style issues
+    - gosec         # Inspects source code for security problems
+    - revive        # Fast, configurable, extensible, flexible, and beautiful linter for Go
+    - stylecheck    # Stylecheck is a replacement for golint
+    - unconvert     # Remove unnecessary type conversions
+    - unparam       # Reports unused function parameters
+    - gocyclo       # Computes cyclomatic complexity
+    - dupl          # Code clone detection
+    - goconst       # Finds repeated strings that could be replaced by a constant
+    - godot         # Check if comments end in a period
+    - errorlint     # Find code that will cause problems with Go 1.13+ error wrapping
+    - exportloopref # Checks for pointers to enclosing loop variables
+    - nolintlint    # Reports ill-formed or insufficient nolint directives
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+
+  govet:
+    check-shadowing: true
+    enable-all: true
+
+  gocyclo:
+    min-complexity: 15
+
+  dupl:
+    threshold: 100
+
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+
+  misspell:
+    locale: US
+
+  revive:
+    rules:
+      - name: var-naming
+        severity: warning
+        disabled: false
+        arguments:
+          - ["ID", "URL", "API", "DNS", "IP", "TTL", "RR"] # Allow common initialisms
+
+  stylecheck:
+    checks: ["all", "-ST1003"] # Disable underscores in names for test functions
+
+  gosec:
+    excludes:
+      - G104 # We handle errors explicitly now
+
+  godot:
+    scope: toplevel
+    exclude:
+      - "^fixme:"
+      - "^todo:"
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+  exclude-rules:
+    # Exclude test files from certain linters
+    - path: _test\.go
+      linters:
+        - dupl
+        - gosec
+        - goconst
+
+    # Exclude generated files
+    - path: ".*\\.pb\\.go"
+      linters:
+        - all
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+  uniq-by-line: true
+  sort-results: true

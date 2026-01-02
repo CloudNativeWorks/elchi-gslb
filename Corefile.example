@@ -1,0 +1,40 @@
+# Elchi GSLB CoreDNS Plugin - Development Configuration
+# This file is automatically copied to 'Corefile' by 'make setup'
+
+# Listen on port 1053 (no sudo required for development)
+.:1053 {
+    # Logging for development
+    log
+    errors
+
+    # Prometheus metrics (optional)
+    prometheus localhost:9253
+}
+
+# Zone configuration for gslb.elchi
+gslb.elchi:1053 {
+    elchi {
+        # Elchi backend API endpoint (required)
+        endpoint http://localhost:1052
+
+        # Shared secret - must match ELCHI_JWT_SECRET in backend (required)
+        secret test-secret-key
+
+        # Sync interval - how often to check for changes (optional, default: 5m)
+        sync_interval 1m
+
+        # HTTP request timeout (optional, default: 10s)
+        timeout 10s
+
+        # Default TTL for records without explicit TTL (optional, default: 300)
+        ttl 300
+
+        # Enable webhook server for instant updates, health checks, and record inspection
+        webhook :8053
+    }
+
+    # Logging for development
+    log
+    errors
+}
+

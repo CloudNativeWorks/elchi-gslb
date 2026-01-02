@@ -1,0 +1,56 @@
+# Binaries
+coredns-elchi
+coredns
+*.exe
+*.dll
+*.so
+*.dylib
+
+# CoreDNS clone directory
+coredns/
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.out
+
+# Go workspace file
+go.work
+
+# Dependency directories
+vendor/
+
+# Configuration files with secrets
+Corefile
+*.env
+.env.*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Build artifacts
+dist/
+build/
+*.tar.gz
+*.zip
+*.sha256
+coredns-elchi-*
+
+# Coverage reports
+coverage.html
+
+# Runtime files
+.mock-controller.pid
