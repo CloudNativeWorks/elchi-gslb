@@ -880,18 +880,9 @@ Comprehensive documentation is available in the [docs/](docs/) directory:
   - Benchmarking instructions
   - Troubleshooting performance issues
 
-- **[Migration Guide](docs/guides/migration-guide.md)** - Migrate from other DNS solutions
-  - From External DNS
-  - From k8s_external plugin
-  - From PowerDNS
-  - From BIND
-  - From Route53/Cloud DNS
-
 ### Quick Links
 
 - [Full Documentation Index](docs/README.md)
-- [Project Design Spec](CLAUDE.md)
-- [Changelog](CHANGELOG.md)
 
 ## License
 
@@ -907,4 +898,3 @@ Contributions welcome! Please ensure:
 ## Support
 
 - Issues: [GitHub Issues](https://github.com/your-org/elchi-gslb/issues)
-- Documentation: [claude.md](claude.md) (design spec)

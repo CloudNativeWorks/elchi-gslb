@@ -5,8 +5,6 @@ Comprehensive documentation for the Elchi GSLB CoreDNS plugin.
 ## Quick Links
 
 - [Main README](../README.md) - Plugin overview and quick start
-- [CLAUDE.md](../CLAUDE.md) - Project context and design specifications
-- [CHANGELOG](../CHANGELOG.md) - Version history and changes
 
 ## Documentation Structure
 
@@ -129,8 +127,6 @@ The plugin exposes these endpoints:
 - `POST /notify` - Receive instant updates
 - `GET /health` - Health check
 - `GET /records` - Inspect cached records
-
-See [CLAUDE.md](../CLAUDE.md) for full API specification.
 
 ## Monitoring
 
