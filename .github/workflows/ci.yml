@@ -79,10 +79,9 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v4
         with:
-          version: v2.3.0
-          args: --timeout=5m
+          version: latest
+          args: --timeout=5m --go=1.25
           skip-cache: true
-          install-mode: goinstall
 
   security:
     name: Security Scan
