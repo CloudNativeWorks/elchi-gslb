@@ -230,30 +230,30 @@ jobs:
           git archive --format=tar.gz --prefix=${ARCHIVE_NAME}/ -o ${ARCHIVE_NAME}.tar.gz HEAD
 
           # Create release notes
-          cat > /tmp/release_notes.md <<EOF
-## Elchi GSLB CoreDNS Plugin v${VERSION}
+          cat > /tmp/release_notes.md <<'EOF'
+## Elchi GSLB CoreDNS Plugin v$VERSION
 
 ### What's Changed
 
-${CHANGELOG}
+$CHANGELOG
 
 ### Installation
 
 #### Using Docker
 
-\`\`\`bash
-docker pull cloudnativeworks/elchi-coredns:v${VERSION}
+```bash
+docker pull cloudnativeworks/elchi-coredns:v$VERSION
 docker pull cloudnativeworks/elchi-coredns:latest
-\`\`\`
+```
 
 #### From Source
 
-\`\`\`bash
-curl -L https://github.com/cloudnativeworks/elchi-gslb/archive/refs/tags/v${VERSION}.tar.gz -o elchi-gslb-v${VERSION}.tar.gz
-tar -xzf elchi-gslb-v${VERSION}.tar.gz
-cd elchi-gslb-v${VERSION}
+```bash
+curl -L https://github.com/cloudnativeworks/elchi-gslb/archive/refs/tags/v$VERSION.tar.gz -o elchi-gslb-v$VERSION.tar.gz
+tar -xzf elchi-gslb-v$VERSION.tar.gz
+cd elchi-gslb-v$VERSION
 make build
-\`\`\`
+```
 
 ### CoreDNS Version
 
@@ -261,9 +261,13 @@ Built with CoreDNS v1.11.1
 
 ### Documentation
 
-- [README](https://github.com/cloudnativeworks/elchi-gslb/blob/v${VERSION}/README.md)
-- [CLAUDE.md](https://github.com/cloudnativeworks/elchi-gslb/blob/v${VERSION}/CLAUDE.md)
+- [README](https://github.com/cloudnativeworks/elchi-gslb/blob/v$VERSION/README.md)
+- [CLAUDE.md](https://github.com/cloudnativeworks/elchi-gslb/blob/v$VERSION/CLAUDE.md)
 EOF
+
+          # Substitute variables in release notes
+          sed -i "s/\$VERSION/${VERSION}/g" /tmp/release_notes.md
+          sed -i "s/\$CHANGELOG/${CHANGELOG}/g" /tmp/release_notes.md
 
           # Create release
           gh release create "v${VERSION}" \
