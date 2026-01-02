@@ -102,7 +102,7 @@ jobs:
           echo "✅ AMD64 image built and pushed: ${IMAGE_TAG}"
 
   build-arm64:
-    runs-on: ubuntu-22.04
+    runs-on: [self-hosted, linux, arm64]
     needs: prepare
     if: contains(needs.prepare.outputs.platforms, 'linux/arm64')
     steps:

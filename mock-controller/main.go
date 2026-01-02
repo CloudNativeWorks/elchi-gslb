@@ -70,6 +70,7 @@ func main() {
 	fmt.Printf("   GET  %s/health\n", addr)
 	fmt.Printf("\n")
 
+	// #nosec G114 -- Mock server for testing only, timeouts not required
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatalf("Failed to start mock controller: %v", err)
 	}
