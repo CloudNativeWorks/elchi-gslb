@@ -1,7 +1,7 @@
 # Multi-stage build for CoreDNS with Elchi plugin
 
 # Stage 1: Build CoreDNS with Elchi plugin
-FROM golang:1.23-alpine AS builder
+FROM golang:1.25.1-alpine AS builder
 
 ARG COREDNS_VERSION=v1.13.2
 ARG TARGETARCH

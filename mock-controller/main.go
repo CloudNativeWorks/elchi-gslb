@@ -26,10 +26,12 @@ type DNSChangesResponse struct {
 
 // DNSRecord represents a single DNS record
 type DNSRecord struct {
-	Name string   `json:"name"`
-	Type string   `json:"type"`
-	TTL  uint32   `json:"ttl"`
-	IPs  []string `json:"ips"`
+	Name     string   `json:"name"`
+	Type     string   `json:"type"`
+	TTL      uint32   `json:"ttl"`
+	IPs      []string `json:"ips"`
+	Enabled  bool     `json:"enabled"`
+	Failover string   `json:"failover,omitempty"`
 }
 
 var mockSnapshot = DNSSnapshot{
@@ -37,22 +39,40 @@ var mockSnapshot = DNSSnapshot{
 	VersionHash: "mock-v1-" + time.Now().Format("20060102150405"),
 	Records: []DNSRecord{
 		{
-			Name: "listener1.gslb.elchi",
-			Type: "A",
-			TTL:  300,
-			IPs:  []string{"192.168.1.10", "192.168.1.11"},
+			Name:    "listener1.gslb.elchi",
+			Type:    "A",
+			TTL:     300,
+			IPs:     []string{"192.168.1.10", "192.168.1.11"},
+			Enabled: true,
 		},
 		{
-			Name: "listener2.gslb.elchi",
-			Type: "A",
-			TTL:  300,
-			IPs:  []string{"192.168.2.20", "192.168.2.21"},
+			Name:    "listener2.gslb.elchi",
+			Type:    "A",
+			TTL:     300,
+			IPs:     []string{"192.168.2.20", "192.168.2.21"},
+			Enabled: true,
 		},
 		{
-			Name: "listener3.gslb.elchi",
-			Type: "AAAA",
-			TTL:  600,
-			IPs:  []string{"2001:db8::1", "2001:db8::2"},
+			Name:    "listener3.gslb.elchi",
+			Type:    "AAAA",
+			TTL:     600,
+			IPs:     []string{"2001:db8::1", "2001:db8::2"},
+			Enabled: true,
+		},
+		{
+			Name:     "asia.gslb.elchi",
+			Type:     "A",
+			TTL:      20,
+			IPs:      []string{"10.10.1.20", "10.10.1.21"},
+			Enabled:  false,
+			Failover: "europe.gslb.elchi",
+		},
+		{
+			Name:    "europe.gslb.elchi",
+			Type:    "A",
+			TTL:     20,
+			IPs:     []string{"10.20.1.30", "10.20.1.31"},
+			Enabled: true,
 		},
 	},
 }

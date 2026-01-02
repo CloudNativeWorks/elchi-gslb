@@ -1,6 +1,6 @@
 module github.com/cloudnativeworks/elchi-gslb
 
-go 1.23
+go 1.25.1
 
 require (
 	github.com/coredns/caddy v1.1.1

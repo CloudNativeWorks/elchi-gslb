@@ -25,7 +25,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.25.1'
           cache: true
 
       - name: Download dependencies
@@ -64,7 +64,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.25.1'
           cache: true
 
       - name: Run go vet
@@ -92,7 +92,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.25.1'
 
       - name: Run gosec
         uses: securego/gosec@master
@@ -116,7 +116,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.25.1'
           cache: true
 
       - name: Clone CoreDNS
@@ -281,7 +281,6 @@ jobs:
             echo "### Documentation"
             echo ""
             echo "- [README](https://github.com/cloudnativeworks/elchi-gslb/blob/v${VERSION}/README.md)"
-            echo "- [CLAUDE.md](https://github.com/cloudnativeworks/elchi-gslb/blob/v${VERSION}/CLAUDE.md)"
           } > /tmp/release_notes.md
 
           # Create release with binary and source archive
@@ -305,7 +304,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.25.1'
           cache: false
 
       - name: Set up QEMU
@@ -353,7 +352,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.25.1'
           cache: false
 
       - name: Set up QEMU
