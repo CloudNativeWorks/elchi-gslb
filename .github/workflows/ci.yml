@@ -334,8 +334,10 @@ jobs:
             --build-arg "TARGETARCH=amd64" \
             -t "${IMAGE_TAG}" \
             -f Dockerfile \
-            --push \
+            --load \
             .
+
+          docker push "${IMAGE_TAG}"
 
           echo "✅ AMD64 image: ${IMAGE_TAG}"
 
@@ -382,8 +384,10 @@ jobs:
             --build-arg "TARGETARCH=arm64" \
             -t "${IMAGE_TAG}" \
             -f Dockerfile \
-            --push \
+            --load \
             .
+
+          docker push "${IMAGE_TAG}"
 
           echo "✅ ARM64 image: ${IMAGE_TAG}"
 
