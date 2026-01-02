@@ -52,16 +52,6 @@ func (e *Elchi) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) 
 
 	qtype := state.QType()
 	qname := state.Name()
-
-	// Only handle A, AAAA, and CNAME records, pass others to next plugin
-	switch qtype {
-	case dns.TypeA, dns.TypeAAAA, dns.TypeCNAME:
-		// Supported types, continue processing
-	default:
-		// Unsupported type, pass to next plugin
-		return plugin.NextOrFailure(e.Name(), e.Next, ctx, w, r)
-	}
-
 	qtypeStr := dns.TypeToString[qtype]
 
 	// Track request
@@ -72,8 +62,10 @@ func (e *Elchi) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) 
 	// Get pre-built dns.RR objects from cache
 	var rrs []dns.RR
 
-	// For A/AAAA queries, check if there's a CNAME first (failover scenario)
-	if qtype == dns.TypeA || qtype == dns.TypeAAAA {
+	// Check for records based on query type
+	switch qtype {
+	case dns.TypeA, dns.TypeAAAA:
+		// For A/AAAA queries, check if there's a CNAME first (failover scenario)
 		cnameRRs := e.cache.Get(qname, dns.TypeCNAME)
 		if len(cnameRRs) > 0 {
 			// CNAME exists, return it instead of A/AAAA
@@ -84,9 +76,12 @@ func (e *Elchi) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) 
 			// No CNAME, look for A/AAAA records
 			rrs = e.cache.Get(qname, qtype)
 		}
-	} else if qtype == dns.TypeCNAME {
+	case dns.TypeCNAME:
 		// Explicit CNAME query
 		rrs = e.cache.Get(qname, dns.TypeCNAME)
+	default:
+		// Unsupported type, pass to next plugin
+		return plugin.NextOrFailure(e.Name(), e.Next, ctx, w, r)
 	}
 
 	if len(rrs) == 0 {

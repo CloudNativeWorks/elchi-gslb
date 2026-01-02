@@ -124,7 +124,7 @@ func TestIntegration_FullLifecycle(t *testing.T) {
 
 	// Query again
 	rec2 := dnstest.NewRecorder(&test.ResponseWriter{})
-	code, err = e.ServeDNS(context.Background(), rec2, m)
+	_, err = e.ServeDNS(context.Background(), rec2, m)
 
 	if err != nil {
 		t.Fatalf("ServeDNS failed: %v", err)
@@ -270,7 +270,7 @@ func TestIntegration_ErrorRecovery(t *testing.T) {
 
 	// Verify plugin recovered and updated cache
 	rec3 := dnstest.NewRecorder(&test.ResponseWriter{})
-	code, err = e.ServeDNS(context.Background(), rec3, m)
+	_, err = e.ServeDNS(context.Background(), rec3, m)
 
 	if err != nil {
 		t.Fatalf("ServeDNS failed after recovery: %v", err)
