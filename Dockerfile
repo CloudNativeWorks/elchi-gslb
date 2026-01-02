@@ -30,10 +30,11 @@ RUN go mod tidy
 RUN make
 
 # Stage 2: Runtime image
-FROM alpine:3.19
+FROM alpine:3.21.3
 
-# Install ca-certificates for HTTPS
-RUN apk add --no-cache ca-certificates
+# Install ca-certificates and openssl, update system packages
+RUN apk --no-cache update && apk --no-cache upgrade && \
+    apk add --no-cache ca-certificates openssl
 
 # Copy CoreDNS binary
 COPY --from=builder /build/coredns/coredns /usr/bin/coredns

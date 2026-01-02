@@ -408,6 +408,10 @@ jobs:
           MANIFEST_TAG="${IMAGE_NAME}:v${VERSION}"
           LATEST_TAG="${IMAGE_NAME}:latest"
 
+          # Remove existing local manifest cache if exists
+          docker manifest rm "${MANIFEST_TAG}" 2>/dev/null || true
+          docker manifest rm "${LATEST_TAG}" 2>/dev/null || true
+
           # Create versioned manifest
           docker manifest create "${MANIFEST_TAG}" \
             "${IMAGE_NAME}:v${VERSION}-amd64" \
