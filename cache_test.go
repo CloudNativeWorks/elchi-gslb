@@ -15,16 +15,18 @@ func TestReplaceFromSnapshot(t *testing.T) {
 		VersionHash: "abc123",
 		Records: []DNSRecord{
 			{
-				Name: "test1.gslb.elchi",
-				Type: "A",
-				TTL:  300,
-				IPs:  []string{"192.168.1.10", "192.168.1.11"},
+				Name:    "test1.gslb.elchi",
+				Type:    "A",
+				TTL:     300,
+				IPs:     []string{"192.168.1.10", "192.168.1.11"},
+				Enabled: true,
 			},
 			{
-				Name: "test2.gslb.elchi",
-				Type: "AAAA",
-				TTL:  600,
-				IPs:  []string{"2001:db8::1"},
+				Name:    "test2.gslb.elchi",
+				Type:    "AAAA",
+				TTL:     600,
+				IPs:     []string{"2001:db8::1"},
+				Enabled: true,
 			},
 		},
 	}
@@ -57,6 +59,7 @@ func TestGet_ARecords(t *testing.T) {
 				Type: "A",
 				TTL:  300,
 				IPs:  []string{"192.168.1.10", "192.168.1.11"},
+    Enabled: true,
 			},
 		},
 	}
@@ -95,6 +98,7 @@ func TestGet_AAAARecords(t *testing.T) {
 				Type: "AAAA",
 				TTL:  600,
 				IPs:  []string{"2001:db8::1", "2001:db8::2"},
+    Enabled: true,
 			},
 		},
 	}
@@ -152,6 +156,7 @@ func TestGet_WrongType(t *testing.T) {
 				Type: "A",
 				TTL:  300,
 				IPs:  []string{"192.168.1.10"},
+    Enabled: true,
 			},
 		},
 	}
@@ -194,6 +199,7 @@ func TestBuildDNSRecords_A(t *testing.T) {
 		Type: "A",
 		TTL:  300,
 		IPs:  []string{"192.168.1.10", "192.168.1.11"},
+  Enabled: true,
 	}
 
 	rrs, err := buildDNSRecords(record, 600)
@@ -217,6 +223,7 @@ func TestBuildDNSRecords_DefaultTTL(t *testing.T) {
 		Type: "A",
 		TTL:  0, // No TTL specified
 		IPs:  []string{"192.168.1.10"},
+  Enabled: true,
 	}
 
 	rrs, err := buildDNSRecords(record, 600)
@@ -236,6 +243,7 @@ func TestBuildDNSRecords_InvalidIP(t *testing.T) {
 		Type: "A",
 		TTL:  300,
 		IPs:  []string{"invalid-ip", "192.168.1.10"},
+  Enabled: true,
 	}
 
 	rrs, err := buildDNSRecords(record, 300)
@@ -255,6 +263,7 @@ func TestBuildDNSRecords_UnsupportedType(t *testing.T) {
 		Type: "CNAME",
 		TTL:  300,
 		IPs:  []string{"192.168.1.10"},
+  Enabled: true,
 	}
 
 	_, err := buildDNSRecords(record, 300)
@@ -276,6 +285,7 @@ func TestConcurrentAccess(t *testing.T) {
 				Type: "A",
 				TTL:  300,
 				IPs:  []string{"192.168.1.10"},
+    Enabled: true,
 			},
 		},
 	}
@@ -334,6 +344,7 @@ func BenchmarkGet(b *testing.B) {
 				Type: "A",
 				TTL:  300,
 				IPs:  []string{"192.168.1.10", "192.168.1.11", "192.168.1.12"},
+    Enabled: true,
 			},
 		},
 	}
@@ -357,12 +368,14 @@ func BenchmarkReplaceFromSnapshot(b *testing.B) {
 				Type: "A",
 				TTL:  300,
 				IPs:  []string{"192.168.1.10"},
+    Enabled: true,
 			},
 			{
 				Name: "test2.gslb.elchi",
 				Type: "A",
 				TTL:  300,
 				IPs:  []string{"192.168.2.10"},
+    Enabled: true,
 			},
 		},
 	}
@@ -371,4 +384,152 @@ func BenchmarkReplaceFromSnapshot(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_ = cache.ReplaceFromSnapshot(snapshot, 300)
 	}
+}
+
+func TestBuildDNSRecords_CNAME_Failover(t *testing.T) {
+	record := DNSRecord{
+		Name:     "abc.asya-gslb.elchi",
+		Type:     "A",
+		TTL:      20,
+		IPs:      []string{"10.10.1.20", "10.10.1.21"},
+		Enabled:  false,
+		Failover: "abc.avrupa-gslb.elchi",
+	}
+
+	rrs, err := buildDNSRecords(record, 300)
+	if err != nil {
+		t.Fatalf("buildDNSRecords failed: %v", err)
+	}
+
+	if len(rrs) != 1 {
+		t.Fatalf("Expected 1 CNAME record, got %d", len(rrs))
+	}
+
+	cname, ok := rrs[0].(*dns.CNAME)
+	if !ok {
+		t.Fatal("Expected CNAME record type")
+	}
+
+	if cname.Target != "abc.avrupa-gslb.elchi." {
+		t.Errorf("Expected CNAME target abc.avrupa-gslb.elchi., got %s", cname.Target)
+	}
+
+	if cname.Hdr.Ttl != 20 {
+		t.Errorf("Expected TTL 20, got %d", cname.Hdr.Ttl)
+	}
+}
+
+func TestBuildDNSRecords_CNAME_Failover_EmptyTarget(t *testing.T) {
+	record := DNSRecord{
+		Name:     "abc.asya-gslb.elchi",
+		Type:     "A",
+		TTL:      20,
+		IPs:      []string{"10.10.1.20"},
+		Enabled:  false,
+		Failover: "", // Empty failover
+	}
+
+	_, err := buildDNSRecords(record, 300)
+	if err == nil {
+		t.Fatal("Expected error when failover is empty but enabled=false, got nil")
+	}
+
+	expectedErr := "is disabled but failover is empty"
+	if !contains(err.Error(), expectedErr) {
+		t.Errorf("Expected error containing '%s', got '%s'", expectedErr, err.Error())
+	}
+}
+
+func TestBuildDNSRecords_EnabledTrue_IgnoresFailover(t *testing.T) {
+	record := DNSRecord{
+		Name:     "abc.asya-gslb.elchi",
+		Type:     "A",
+		TTL:      20,
+		IPs:      []string{"10.10.1.20", "10.10.1.21"},
+		Enabled:  true,
+		Failover: "abc.avrupa-gslb.elchi", // Should be ignored
+	}
+
+	rrs, err := buildDNSRecords(record, 300)
+	if err != nil {
+		t.Fatalf("buildDNSRecords failed: %v", err)
+	}
+
+	if len(rrs) != 2 {
+		t.Fatalf("Expected 2 A records, got %d", len(rrs))
+	}
+
+	// Verify they are A records, not CNAME
+	for _, rr := range rrs {
+		if _, ok := rr.(*dns.A); !ok {
+			t.Errorf("Expected A record, got %T", rr)
+		}
+	}
+}
+
+func TestCache_CNAME_Failover_Integration(t *testing.T) {
+	cache := NewRecordCache("gslb.elchi.")
+
+	snapshot := &DNSSnapshot{
+		Zone:        "gslb.elchi.",
+		VersionHash: "v1",
+		Records: []DNSRecord{
+			{
+				Name:     "service1.gslb.elchi",
+				Type:     "A",
+				TTL:      30,
+				IPs:      []string{"192.168.1.10"},
+				Enabled:  false,
+				Failover: "service1-backup.gslb.elchi",
+			},
+			{
+				Name:     "service1-backup.gslb.elchi",
+				Type:     "A",
+				TTL:      30,
+				IPs:      []string{"192.168.2.10", "192.168.2.11"},
+				Enabled:  true,
+			},
+		},
+	}
+
+	err := cache.ReplaceFromSnapshot(snapshot, 300)
+	if err != nil {
+		t.Fatalf("ReplaceFromSnapshot failed: %v", err)
+	}
+
+	// Query for service1 with type A should return CNAME
+	rrs := cache.Get("service1.gslb.elchi.", dns.TypeCNAME)
+	if len(rrs) != 1 {
+		t.Fatalf("Expected 1 CNAME record for service1, got %d", len(rrs))
+	}
+
+	cname, ok := rrs[0].(*dns.CNAME)
+	if !ok {
+		t.Fatal("Expected CNAME record")
+	}
+
+	if cname.Target != "service1-backup.gslb.elchi." {
+		t.Errorf("Expected CNAME to service1-backup.gslb.elchi., got %s", cname.Target)
+	}
+
+	// Query for backup service should return A records
+	aRRs := cache.Get("service1-backup.gslb.elchi.", dns.TypeA)
+	if len(aRRs) != 2 {
+		t.Fatalf("Expected 2 A records for backup service, got %d", len(aRRs))
+	}
+}
+
+// Helper function for string contains check
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
+		(len(s) > 0 && len(substr) > 0 && stringContains(s, substr)))
+}
+
+func stringContains(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
 }

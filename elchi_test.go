@@ -26,6 +26,7 @@ func TestServeDNS_InZone(t *testing.T) {
 				Type: "A",
 				TTL:  300,
 				IPs:  []string{"192.168.1.10"},
+    Enabled: true,
 			},
 		},
 	}
@@ -99,13 +100,12 @@ func TestServeDNS_UnsupportedRecordType(t *testing.T) {
 	}
 	e.cache = NewRecordCache("gslb.elchi.")
 
-	// Test unsupported record types
+	// Test unsupported record types (CNAME is now supported)
 	tests := []struct {
 		name  string
 		qtype uint16
 	}{
 		{"MX record", dns.TypeMX},
-		{"CNAME record", dns.TypeCNAME},
 		{"TXT record", dns.TypeTXT},
 		{"NS record", dns.TypeNS},
 		{"SOA record", dns.TypeSOA},
@@ -215,6 +215,7 @@ func TestReady(t *testing.T) {
 							Type: "A",
 							TTL:  300,
 							IPs:  []string{"192.168.1.10"},
+       Enabled: true,
 						},
 					},
 				}

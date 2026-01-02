@@ -2,13 +2,13 @@
 
 This repository contains a CoreDNS plugin called **`elchi`** (registered as "elchi" in CoreDNS).
 
-The purpose of this plugin is to integrate CoreDNS with the **Elchi** control plane and provide GSLB-like DNS answers for per-project zones, typically:
+The purpose of this plugin is to integrate CoreDNS with the **Elchi** control plane and provide GSLB-like DNS answers for a user-configured zone.
 
-- `gslb.elchi`
+**Example zone**: `gslb.elchi` (but you can use any zone you control, e.g., `lb.example.com`, `gslb.mycompany.internal`, etc.)
 
-For each listener created in Elchi, a unique hostname is generated (e.g. `listener123.gslb.elchi.`).
+For each listener created in Elchi, a unique hostname is generated (e.g., `listener123.gslb.elchi.`).
 Other DNS zones (internal or external) create **CNAME records** pointing to these hostnames.
-This plugin answers queries for `*.gslb.elchi` from an in-memory cache that is synchronized from Elchi over **REST + JSON**.
+This plugin answers queries for the configured zone from an in-memory cache that is synchronized from Elchi over **REST + JSON**.
 
 ---
 
@@ -101,6 +101,49 @@ This design ensures:
 - **Instant updates** via webhook for critical changes.
 - **Graceful degradation** on controller failures.
 
+### CNAME-Based Failover
+
+The plugin supports CNAME-based failover for regional or service-level failover scenarios.
+
+**How it works:**
+- Each DNS record has two new fields: `enabled` (bool) and `failover` (string)
+- When `enabled=true`: Return normal A/AAAA records with IPs (standard behavior)
+- When `enabled=false`: Return CNAME record pointing to the `failover` domain
+
+**Example scenario:**
+```
+Asia region:   asya-gslb.elchi
+Europe region: avrupa-gslb.elchi
+```
+
+**API record format:**
+```json
+{
+  "name": "abc.asya-gslb.elchi",
+  "type": "A",
+  "ttl": 20,
+  "ips": ["10.10.1.20", "10.10.1.21"],
+  "enabled": false,
+  "failover": "abc.avrupa-gslb.elchi"
+}
+```
+
+**DNS behavior:**
+- Client queries: `abc.asya-gslb.elchi A`
+- Plugin returns: `abc.asya-gslb.elchi 20 IN CNAME abc.avrupa-gslb.elchi.`
+- Client automatically follows CNAME and queries Europe zone
+- Europe zone returns the backup IPs
+
+**Edge cases:**
+- If `enabled=false` but `failover=""` (empty): Returns NXDOMAIN
+- If `enabled=true` with `failover`: Ignores failover, returns IPs normally
+
+**Use cases:**
+- Regional failover (Asia → Europe)
+- Blue/green deployments
+- Maintenance mode routing
+- Multi-cluster failover
+
 ---
 
 ## REST API specification
@@ -139,7 +182,9 @@ Accept: application/json
       "name": "listener1.gslb.elchi",
       "type": "A",
       "ttl": 300,
-      "ips": ["192.168.1.10", "192.168.1.11"]
+      "ips": ["192.168.1.10", "192.168.1.11"],
+      "enabled": true,
+      "failover": "listener1-backup.gslb.elchi"
     }
   ]
 }

@@ -101,7 +101,8 @@ See [Performance Tuning Guide](guides/performance-tuning.md) for details.
 ### Corefile Configuration
 
 ```
-gslb.elchi {
+# Zone name is flexible - use any zone you control
+your.zone.here {
     elchi {
         endpoint http://controller:8080  # Required
         secret my-secret-key             # Required
@@ -111,6 +112,12 @@ gslb.elchi {
         webhook :8053                    # Optional, enables instant updates
     }
 }
+
+# Examples:
+# - gslb.elchi
+# - lb.example.com
+# - gslb.mycompany.internal
+# - dns-loadbalancer.prod.local
 ```
 
 ### Controller API

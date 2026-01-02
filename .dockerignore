@@ -1,0 +1,43 @@
+# Git
+.git
+.gitignore
+.github
+
+# Documentation
+*.md
+docs/
+LICENSE
+
+# Development
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Test files
+*_test.go
+integration_test.go
+mock-controller/
+testdata/
+
+# Build artifacts
+coredns
+*.test
+*.out
+coverage.out
+
+# CI/CD
+.github/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Plan files
+.claude/

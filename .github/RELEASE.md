@@ -63,7 +63,6 @@ gosec ./...
 
 Update any version references in:
 - `README.md` (if showing version examples)
-- `CHANGELOG.md` (create if doesn't exist)
 
 ### 3. Create and Push Tag
 
@@ -86,7 +85,6 @@ git push origin $VERSION
    - Run all tests
    - Run security scans
    - Build binaries for multiple platforms
-   - Create GitHub release with changelog
    - Upload release artifacts
 
 ### 5. Verify Release
@@ -118,10 +116,6 @@ git push origin :refs/tags/$VERSION
 # Delete the GitHub release manually through the UI
 ```
 
-## Automated Changelog
-
-The release workflow automatically generates a changelog from git commits between tags.
-
 ### Commit Message Format
 
 Use conventional commit format for better changelogs:
@@ -146,7 +140,6 @@ git commit -m "docs: add Kubernetes deployment example"
 - [ ] All linters passing (golangci-lint, staticcheck, gosec)
 - [ ] Version bumped appropriately (semver)
 - [ ] Documentation updated
-- [ ] CHANGELOG.md updated (if exists)
 - [ ] Tag created with `v` prefix
 - [ ] Tag pushed to GitHub
 - [ ] GitHub Actions workflow completed successfully

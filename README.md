@@ -10,6 +10,8 @@ CoreDNS plugin for Global Server Load Balancing (GSLB) integration with Elchi Co
 
 The *elchi* plugin integrates CoreDNS with the Elchi backend controller to provide dynamic DNS responses for GSLB zones. It maintains an in-memory cache of DNS records that is synchronized periodically from the Elchi backend using hash-based change detection.
 
+**Note**: The zone name is completely flexible - you can use any zone you control (e.g., `gslb.example.org`, `lb.mycompany.com`, `dns.internal`, etc.). The examples use `gslb.elchi` and `gslb.example.org` for illustration purposes only.
+
 The plugin answers DNS queries from a pre-built cache synchronized from an external API, providing:
 - Hash-based change detection (only updates when backend data changes)
 - Periodic background sync (default: 5 minutes)
@@ -96,6 +98,41 @@ gslb.staging.example.org {
 }
 ~~~
 
+CNAME-based regional failover:
+
+~~~ corefile
+# Asia region
+asya-gslb.elchi {
+    elchi {
+        endpoint http://elchi-asia:8080
+        secret asia-secret
+    }
+}
+
+# Europe region (backup)
+avrupa-gslb.elchi {
+    elchi {
+        endpoint http://elchi-europe:8080
+        secret europe-secret
+    }
+}
+~~~
+
+When the Asia region is disabled (e.g., during maintenance), the controller sends:
+
+```json
+{
+  "name": "service.asya-gslb.elchi",
+  "type": "A",
+  "ttl": 20,
+  "ips": ["10.10.1.20", "10.10.1.21"],
+  "enabled": false,
+  "failover": "service.avrupa-gslb.elchi"
+}
+```
+
+DNS clients querying `service.asya-gslb.elchi` will receive a CNAME to `service.avrupa-gslb.elchi` and automatically resolve to the Europe region IPs.
+
 ## Architecture
 
 ```
@@ -126,7 +163,39 @@ gslb.staging.example.org {
 
 ## Quick Start
 
-### 1. Setup
+### Option 1: Docker (Recommended)
+
+```bash
+# Pull the image
+docker pull cloudnativeworks/elchi-coredns:latest
+
+# Create Corefile
+cat > Corefile <<EOF
+gslb.elchi {
+    elchi {
+        endpoint http://elchi-backend:8080
+        secret your-secret-key
+        sync_interval 5m
+        webhook :8053
+    }
+    log
+    errors
+}
+EOF
+
+# Run
+docker run -d \
+  --name elchi-coredns \
+  -p 53:53/udp \
+  -p 53:53/tcp \
+  -p 8053:8053 \
+  -v $(pwd)/Corefile:/etc/coredns/Corefile \
+  cloudnativeworks/elchi-coredns:latest
+```
+
+### Option 2: Build from Source
+
+#### 1. Setup
 
 ```bash
 make setup
@@ -137,7 +206,7 @@ This will:
 - Create `Corefile` from `Corefile.example`
 - Download Go dependencies
 
-### 2. Configure
+#### 2. Configure
 
 Edit `Corefile` with your settings:
 
@@ -777,6 +846,31 @@ rate(coredns_elchi_webhook_requests_total{status="unauthorized"}[5m])
 
 ## Production Deployment
 
+### Docker
+
+Pre-built multi-architecture Docker images are available on Docker Hub:
+
+```bash
+# Pull latest version
+docker pull cloudnativeworks/elchi-coredns:latest
+
+# Pull specific version
+docker pull cloudnativeworks/elchi-coredns:v0.1.0
+
+# Run with custom Corefile
+docker run -d \
+  --name elchi-coredns \
+  -p 53:53/udp \
+  -p 53:53/tcp \
+  -p 8053:8053 \
+  -v $(pwd)/Corefile:/etc/coredns/Corefile \
+  cloudnativeworks/elchi-coredns:latest
+```
+
+**Supported architectures:**
+- `linux/amd64`
+- `linux/arm64`
+
 ### Kubernetes Example
 
 ```yaml
@@ -791,6 +885,7 @@ data:
             endpoint http://elchi-backend:8080
             secret ${ELCHI_SECRET}
             sync_interval 5m
+            webhook :8053
         }
         prometheus :9253
         errors
@@ -816,7 +911,7 @@ spec:
     spec:
       containers:
       - name: coredns
-        image: your-registry/elchi-coredns:latest
+        image: cloudnativeworks/elchi-coredns:latest
         ports:
         - containerPort: 53
           protocol: UDP

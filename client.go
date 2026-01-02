@@ -28,10 +28,12 @@ type DNSChangesResponse struct {
 
 // DNSRecord represents a single DNS record from Elchi
 type DNSRecord struct {
-	Name string   `json:"name"` // e.g., "listener1.gslb.elchi"
-	Type string   `json:"type"` // "A" or "AAAA"
-	TTL  uint32   `json:"ttl"`  // TTL in seconds
-	IPs  []string `json:"ips"`  // List of IP addresses
+	Name     string   `json:"name"`              // e.g., "listener1.gslb.elchi"
+	Type     string   `json:"type"`              // "A" or "AAAA"
+	TTL      uint32   `json:"ttl"`               // TTL in seconds
+	IPs      []string `json:"ips"`               // List of IP addresses
+	Enabled  bool     `json:"enabled"`           // If false, return CNAME to failover
+	Failover string   `json:"failover,omitempty"` // CNAME target when enabled=false
 }
 
 // ElchiClient is the HTTP client for the Elchi DNS API

@@ -26,10 +26,11 @@ func TestHandleNotify_Success(t *testing.T) {
 	notifyReq := NotifyRequest{
 		Records: []DNSRecord{
 			{
-				Name: "test.gslb.elchi",
-				Type: "A",
-				TTL:  300,
-				IPs:  []string{"192.168.1.10"},
+				Name:    "test.gslb.elchi",
+				Type:    "A",
+				TTL:     300,
+				IPs:     []string{"192.168.1.10"},
+				Enabled: true,
 			},
 		},
 	}
@@ -84,10 +85,11 @@ func TestHandleNotify_WithDeletes(t *testing.T) {
 		VersionHash: "test123",
 		Records: []DNSRecord{
 			{
-				Name: "old.gslb.elchi",
-				Type: "A",
-				TTL:  300,
-				IPs:  []string{"192.168.1.10"},
+				Name:    "old.gslb.elchi",
+				Type:    "A",
+				TTL:     300,
+				IPs:     []string{"192.168.1.10"},
+				Enabled: true,
 			},
 		},
 	}
@@ -180,7 +182,7 @@ func TestHandleHealth_Healthy(t *testing.T) {
 		Zone:        "gslb.elchi.",
 		VersionHash: "abc123",
 		Records: []DNSRecord{
-			{Name: "test.gslb.elchi", Type: "A", TTL: 300, IPs: []string{"192.168.1.10"}},
+			{Name: "test.gslb.elchi", Type: "A", TTL: 300, IPs: []string{"192.168.1.10"}, Enabled: true},
 		},
 	}
 	e.cache.ReplaceFromSnapshot(snapshot, 300)
@@ -262,9 +264,9 @@ func TestHandleRecords_All(t *testing.T) {
 		Zone:        "gslb.elchi.",
 		VersionHash: "test123",
 		Records: []DNSRecord{
-			{Name: "test1.gslb.elchi", Type: "A", TTL: 300, IPs: []string{"192.168.1.10"}},
-			{Name: "test2.gslb.elchi", Type: "A", TTL: 300, IPs: []string{"192.168.1.11"}},
-			{Name: "test3.gslb.elchi", Type: "AAAA", TTL: 300, IPs: []string{"2001:db8::1"}},
+			{Name: "test1.gslb.elchi", Type: "A", TTL: 300, IPs: []string{"192.168.1.10"}, Enabled: true},
+			{Name: "test2.gslb.elchi", Type: "A", TTL: 300, IPs: []string{"192.168.1.11"}, Enabled: true},
+			{Name: "test3.gslb.elchi", Type: "AAAA", TTL: 300, IPs: []string{"2001:db8::1"}, Enabled: true},
 		},
 	}
 	e.cache.ReplaceFromSnapshot(snapshot, 300)
@@ -307,9 +309,9 @@ func TestHandleRecords_Filtered(t *testing.T) {
 		Zone:        "gslb.elchi.",
 		VersionHash: "test123",
 		Records: []DNSRecord{
-			{Name: "api.gslb.elchi", Type: "A", TTL: 300, IPs: []string{"192.168.1.10"}},
-			{Name: "web.gslb.elchi", Type: "A", TTL: 300, IPs: []string{"192.168.1.11"}},
-			{Name: "db.gslb.elchi", Type: "AAAA", TTL: 300, IPs: []string{"2001:db8::1"}},
+			{Name: "api.gslb.elchi", Type: "A", TTL: 300, IPs: []string{"192.168.1.10"}, Enabled: true},
+			{Name: "web.gslb.elchi", Type: "A", TTL: 300, IPs: []string{"192.168.1.11"}, Enabled: true},
+			{Name: "db.gslb.elchi", Type: "AAAA", TTL: 300, IPs: []string{"2001:db8::1"}, Enabled: true},
 		},
 	}
 	e.cache.ReplaceFromSnapshot(snapshot, 300)

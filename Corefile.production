@@ -1,0 +1,27 @@
+# Elchi GSLB CoreDNS Plugin - Production Configuration
+# This file shows production-ready configuration
+
+# GSLB zone
+gslb.elchi {
+    elchi {
+        endpoint http://elchi-backend:8080
+        secret YOUR_SECRET_HERE
+        ttl 300
+        sync_interval 5m
+        timeout 10s
+        webhook :8053
+        fallthrough
+    }
+    ready
+    prometheus :9253
+    log
+    errors
+}
+
+# Forward all other queries to upstream DNS
+. {
+    forward . 8.8.8.8 8.8.4.4
+    cache 30
+    log
+    errors
+}

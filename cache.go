@@ -304,6 +304,26 @@ func buildDNSRecords(record DNSRecord, defaultTTL uint32) ([]dns.RR, error) {
 		ttl = defaultTTL
 	}
 
+	// Check if failover is active (enabled=false)
+	if !record.Enabled {
+		// If failover is empty, return error (will result in NXDOMAIN)
+		if record.Failover == "" {
+			return nil, fmt.Errorf("record %s is disabled but failover is empty", record.Name)
+		}
+
+		// Build CNAME record pointing to failover
+		cname := &dns.CNAME{
+			Hdr: dns.RR_Header{
+				Name:   name,
+				Rrtype: dns.TypeCNAME,
+				Class:  dns.ClassINET,
+				Ttl:    ttl,
+			},
+			Target: normalizeDomain(record.Failover),
+		}
+		return []dns.RR{cname}, nil
+	}
+
 	// Build RRs based on record type
 	recordType := strings.ToUpper(record.Type)
 
