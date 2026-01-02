@@ -139,7 +139,6 @@ This release is built with CoreDNS v1.11.1
 
 - [README](https://github.com/cloudnativeworks/elchi-gslb/blob/v${VERSION}/README.md)
 - [Documentation](https://github.com/cloudnativeworks/elchi-gslb/blob/v${VERSION}/docs/README.md)
-- [CLAUDE.md](https://github.com/cloudnativeworks/elchi-gslb/blob/v${VERSION}/CLAUDE.md)
 
 ### Docker Images
 

@@ -121,7 +121,7 @@ jobs:
 
       - name: Clone CoreDNS
         run: |
-          git clone --depth 1 --branch v1.11.3 https://github.com/coredns/coredns.git
+          git clone --depth 1 --branch v1.13.2 https://github.com/coredns/coredns.git
           cd coredns
 
       - name: Register plugin
@@ -219,6 +219,13 @@ jobs:
 
           echo "${CHANGELOG}" > /tmp/changelog.txt
 
+      - name: Download binary artifact
+        if: steps.check_release.outputs.created == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: coredns-elchi-linux-amd64
+          path: ./artifacts
+
       - name: Create GitHub Release
         if: steps.check_release.outputs.created == 'true'
         run: |
@@ -228,6 +235,10 @@ jobs:
           # Create source archive
           ARCHIVE_NAME="elchi-gslb-v${VERSION}"
           git archive --format=tar.gz --prefix=${ARCHIVE_NAME}/ -o ${ARCHIVE_NAME}.tar.gz HEAD
+
+          # Rename binary with version
+          mv ./artifacts/coredns-elchi ./artifacts/coredns-elchi-linux-amd64-v${VERSION}
+          chmod +x ./artifacts/coredns-elchi-linux-amd64-v${VERSION}
 
           # Create release notes
           {
@@ -246,6 +257,14 @@ jobs:
             echo "docker pull cloudnativeworks/elchi-coredns:latest"
             echo '```'
             echo ""
+            echo "#### Download Binary (Linux AMD64)"
+            echo ""
+            echo '```bash'
+            echo "wget https://github.com/cloudnativeworks/elchi-gslb/releases/download/v${VERSION}/coredns-elchi-linux-amd64-v${VERSION}"
+            echo "chmod +x coredns-elchi-linux-amd64-v${VERSION}"
+            echo "sudo mv coredns-elchi-linux-amd64-v${VERSION} /usr/local/bin/coredns"
+            echo '```'
+            echo ""
             echo "#### From Source"
             echo ""
             echo '```bash'
@@ -257,7 +276,7 @@ jobs:
             echo ""
             echo "### CoreDNS Version"
             echo ""
-            echo "Built with CoreDNS v1.11.1"
+            echo "Built with CoreDNS v1.13.2"
             echo ""
             echo "### Documentation"
             echo ""
@@ -265,11 +284,12 @@ jobs:
             echo "- [CLAUDE.md](https://github.com/cloudnativeworks/elchi-gslb/blob/v${VERSION}/CLAUDE.md)"
           } > /tmp/release_notes.md
 
-          # Create release
+          # Create release with binary and source archive
           gh release create "v${VERSION}" \
             --title "Elchi GSLB v${VERSION}" \
             --notes-file /tmp/release_notes.md \
-            ${ARCHIVE_NAME}.tar.gz
+            ${ARCHIVE_NAME}.tar.gz \
+            ./artifacts/coredns-elchi-linux-amd64-v${VERSION}
 
           echo "✅ Release v${VERSION} created"
 
@@ -312,7 +332,7 @@ jobs:
           docker buildx build \
             --no-cache \
             --platform linux/amd64 \
-            --build-arg "COREDNS_VERSION=v1.11.1" \
+            --build-arg "COREDNS_VERSION=v1.13.2" \
             --build-arg "TARGETARCH=amd64" \
             -t "${IMAGE_TAG}" \
             -f Dockerfile \
@@ -323,7 +343,7 @@ jobs:
 
   docker-arm64:
     name: Build ARM64 Docker Image
-    runs-on: [self-hosted, linux, arm64]
+    runs-on: self-hosted
     needs: release
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.release.outputs.release_created == 'true'
     steps:
@@ -360,7 +380,7 @@ jobs:
           docker buildx build \
             --no-cache \
             --platform linux/arm64 \
-            --build-arg "COREDNS_VERSION=v1.11.1" \
+            --build-arg "COREDNS_VERSION=v1.13.2" \
             --build-arg "TARGETARCH=arm64" \
             -t "${IMAGE_TAG}" \
             -f Dockerfile \

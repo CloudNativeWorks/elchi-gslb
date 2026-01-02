@@ -3,7 +3,7 @@
 # Stage 1: Build CoreDNS with Elchi plugin
 FROM golang:1.23-alpine AS builder
 
-ARG COREDNS_VERSION=v1.11.1
+ARG COREDNS_VERSION=v1.13.2
 ARG TARGETARCH
 
 # Install build dependencies

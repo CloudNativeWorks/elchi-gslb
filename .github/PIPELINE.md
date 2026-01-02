@@ -88,10 +88,8 @@ The following secrets must be defined in repository settings:
 ### Self-hosted Runner (ARM64)
 A self-hosted runner is required for ARM64 builds:
 
-**Labels**:
+**Label**:
 - `self-hosted`
-- `linux`
-- `arm64`
 
 If you don't have a self-hosted runner, you can temporarily change the ARM64 job in ci.yml to use ubuntu-22.04 (slower, uses QEMU emulation).
 
@@ -121,4 +119,4 @@ If you don't have a self-hosted runner, you can temporarily change the ARM64 job
 
 ### ARM64 build failed
 - Check if self-hosted runner is running
-- Verify runner labels are correct (`self-hosted, linux, arm64`)
+- Verify runner label is correct (`self-hosted`)
