@@ -10,6 +10,17 @@ import (
 	"github.com/coredns/coredns/plugin"
 )
 
+// Configuration defaults
+const (
+	defaultTTL          = 300              // Default TTL in seconds (5 minutes)
+	defaultSyncInterval = 5 * time.Minute  // Default sync interval
+	defaultTimeout      = 10 * time.Second // Default HTTP timeout
+	defaultWebhookAddr  = ":8053"          // Default webhook server address
+	minSyncInterval     = 1 * time.Minute  // Minimum allowed sync interval
+	minTimeout          = 1 * time.Second  // Minimum allowed timeout
+	minSecretLength     = 8                // Minimum secret length for security
+)
+
 // init registers this plugin within the Caddy plugin framework.
 func init() {
 	plugin.Register("elchi", setup)
@@ -40,11 +51,11 @@ func setup(c *caddy.Controller) error {
 //nolint:gocyclo // Config parsing is inherently complex.
 func parseElchi(c *caddy.Controller) (*Elchi, error) {
 	e := &Elchi{
-		TTL:           300,              // default TTL (5 minutes)
-		SyncInterval:  5 * time.Minute,  // default sync interval (5 minutes)
-		Timeout:       10 * time.Second, // default HTTP timeout (10 seconds)
-		WebhookEnable: false,            // webhook server disabled by default
-		WebhookAddr:   ":8053",          // default webhook address
+		TTL:           defaultTTL,
+		SyncInterval:  defaultSyncInterval,
+		Timeout:       defaultTimeout,
+		WebhookEnable: false,
+		WebhookAddr:   defaultWebhookAddr,
 	}
 
 	// Extract zone from server block keys
@@ -92,8 +103,8 @@ func parseElchi(c *caddy.Controller) (*Elchi, error) {
 				if err != nil {
 					return nil, c.Errf("invalid sync_interval: %v", err)
 				}
-				if interval < 1*time.Minute {
-					return nil, c.Errf("sync_interval must be at least 1m")
+				if interval < minSyncInterval {
+					return nil, c.Errf("sync_interval must be at least %v", minSyncInterval)
 				}
 				e.SyncInterval = interval
 
@@ -105,8 +116,8 @@ func parseElchi(c *caddy.Controller) (*Elchi, error) {
 				if err != nil {
 					return nil, c.Errf("invalid timeout: %v", err)
 				}
-				if timeout < 1*time.Second {
-					return nil, c.Errf("timeout must be at least 1s")
+				if timeout < minTimeout {
+					return nil, c.Errf("timeout must be at least %v", minTimeout)
 				}
 				e.Timeout = timeout
 
@@ -141,8 +152,8 @@ func parseElchi(c *caddy.Controller) (*Elchi, error) {
 	}
 
 	// Validate secret length (minimum 8 characters for basic security)
-	if len(e.Secret) < 8 {
-		return nil, fmt.Errorf("secret must be at least 8 characters long")
+	if len(e.Secret) < minSecretLength {
+		return nil, fmt.Errorf("secret must be at least %d characters long", minSecretLength)
 	}
 
 	// Validate sync_interval vs timeout

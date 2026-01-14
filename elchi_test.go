@@ -26,7 +26,6 @@ func TestServeDNS_InZone(t *testing.T) {
 				Type:    "A",
 				TTL:     300,
 				IPs:     []string{"192.168.1.10"},
-				Enabled: true,
 			},
 		},
 	}
@@ -215,7 +214,6 @@ func TestReady(t *testing.T) {
 							Type:    "A",
 							TTL:     300,
 							IPs:     []string{"192.168.1.10"},
-							Enabled: true,
 						},
 					},
 				}

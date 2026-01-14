@@ -32,8 +32,7 @@ type DNSRecord struct {
 	Type     string   `json:"type"`               // "A" or "AAAA"
 	TTL      uint32   `json:"ttl"`                // TTL in seconds
 	IPs      []string `json:"ips"`                // List of IP addresses
-	Enabled  bool     `json:"enabled"`            // If false, return CNAME to failover
-	Failover string   `json:"failover,omitempty"` // CNAME target when enabled=false
+	Failover string   `json:"failover,omitempty"` // CNAME target when IPs is empty
 }
 
 // ElchiClient is the HTTP client for the Elchi DNS API.
@@ -48,7 +47,7 @@ type ElchiClient struct {
 func NewElchiClient(endpoint, zone, secret string, timeout time.Duration) *ElchiClient {
 	return &ElchiClient{
 		endpoint: strings.TrimRight(endpoint, "/"),
-		zone:     zone,
+		zone:     strings.TrimSuffix(zone, "."), // Remove trailing dot for API requests
 		secret:   secret,
 		httpClient: &http.Client{
 			Timeout: timeout,
@@ -91,15 +90,20 @@ func (c *ElchiClient) FetchSnapshot(ctx context.Context) (*DNSSnapshot, error) {
 		_ = resp.Body.Close()
 	}()
 
+	// Read body once for both error handling and decoding
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
 	// Check status code
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
 	}
 
 	// Parse response
 	var snapshot DNSSnapshot
-	if err := json.NewDecoder(resp.Body).Decode(&snapshot); err != nil {
+	if err := json.Unmarshal(body, &snapshot); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
@@ -153,14 +157,19 @@ func (c *ElchiClient) CheckChanges(ctx context.Context, sinceHash string) (*DNSC
 		}, nil
 	}
 
+	// Read body once for both error handling and decoding
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
 	}
 
 	// Parse response
 	var changes DNSChangesResponse
-	if err := json.NewDecoder(resp.Body).Decode(&changes); err != nil {
+	if err := json.Unmarshal(body, &changes); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 

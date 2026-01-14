@@ -28,7 +28,6 @@ func TestIntegration_FullLifecycle(t *testing.T) {
 				Type:    "A",
 				TTL:     300,
 				IPs:     []string{"192.168.1.10", "192.168.1.11"},
-				Enabled: true,
 			},
 		},
 	})
@@ -98,7 +97,6 @@ func TestIntegration_FullLifecycle(t *testing.T) {
 				Type:    "A",
 				TTL:     300,
 				IPs:     []string{"192.168.2.20"},
-				Enabled: true,
 			},
 		},
 	})
@@ -172,7 +170,6 @@ func TestIntegration_ErrorRecovery(t *testing.T) {
 				Type:    "A",
 				TTL:     300,
 				IPs:     []string{"192.168.1.10"},
-				Enabled: true,
 			},
 		},
 	})
@@ -253,7 +250,6 @@ func TestIntegration_ErrorRecovery(t *testing.T) {
 				Type:    "A",
 				TTL:     300,
 				IPs:     []string{"192.168.2.20"},
-				Enabled: true,
 			},
 		},
 	})
@@ -303,7 +299,6 @@ func TestIntegration_ConcurrentQueries(t *testing.T) {
 				Type:    "A",
 				TTL:     300,
 				IPs:     []string{"192.168.1.10"},
-				Enabled: true,
 			},
 		},
 	})
@@ -387,7 +382,6 @@ func TestIntegration_MultiZone(t *testing.T) {
 				Type:    "A",
 				TTL:     300,
 				IPs:     []string{"192.168.1.10"},
-				Enabled: true,
 			},
 		},
 	})

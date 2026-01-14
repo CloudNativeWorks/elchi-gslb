@@ -19,14 +19,12 @@ func TestReplaceFromSnapshot(t *testing.T) {
 				Type:    "A",
 				TTL:     300,
 				IPs:     []string{"192.168.1.10", "192.168.1.11"},
-				Enabled: true,
 			},
 			{
 				Name:    "test2.gslb.elchi",
 				Type:    "AAAA",
 				TTL:     600,
 				IPs:     []string{"2001:db8::1"},
-				Enabled: true,
 			},
 		},
 	}
@@ -42,7 +40,7 @@ func TestReplaceFromSnapshot(t *testing.T) {
 	}
 
 	// Verify domain count
-	if count := cache.Count(); count != 2 {
+	if count := cache.DomainCount(); count != 2 {
 		t.Errorf("Expected 2 domains, got %d", count)
 	}
 }
@@ -59,7 +57,6 @@ func TestGet_ARecords(t *testing.T) {
 				Type:    "A",
 				TTL:     300,
 				IPs:     []string{"192.168.1.10", "192.168.1.11"},
-				Enabled: true,
 			},
 		},
 	}
@@ -98,7 +95,6 @@ func TestGet_AAAARecords(t *testing.T) {
 				Type:    "AAAA",
 				TTL:     600,
 				IPs:     []string{"2001:db8::1", "2001:db8::2"},
-				Enabled: true,
 			},
 		},
 	}
@@ -156,7 +152,6 @@ func TestGet_WrongType(t *testing.T) {
 				Type:    "A",
 				TTL:     300,
 				IPs:     []string{"192.168.1.10"},
-				Enabled: true,
 			},
 		},
 	}
@@ -199,7 +194,6 @@ func TestBuildDNSRecords_A(t *testing.T) {
 		Type:    "A",
 		TTL:     300,
 		IPs:     []string{"192.168.1.10", "192.168.1.11"},
-		Enabled: true,
 	}
 
 	rrs, err := buildDNSRecords(record, 600)
@@ -223,7 +217,6 @@ func TestBuildDNSRecords_DefaultTTL(t *testing.T) {
 		Type:    "A",
 		TTL:     0, // No TTL specified
 		IPs:     []string{"192.168.1.10"},
-		Enabled: true,
 	}
 
 	rrs, err := buildDNSRecords(record, 600)
@@ -243,7 +236,6 @@ func TestBuildDNSRecords_InvalidIP(t *testing.T) {
 		Type:    "A",
 		TTL:     300,
 		IPs:     []string{"invalid-ip", "192.168.1.10"},
-		Enabled: true,
 	}
 
 	rrs, err := buildDNSRecords(record, 300)
@@ -263,7 +255,6 @@ func TestBuildDNSRecords_UnsupportedType(t *testing.T) {
 		Type:    "CNAME",
 		TTL:     300,
 		IPs:     []string{"192.168.1.10"},
-		Enabled: true,
 	}
 
 	_, err := buildDNSRecords(record, 300)
@@ -285,7 +276,6 @@ func TestConcurrentAccess(t *testing.T) {
 				Type:    "A",
 				TTL:     300,
 				IPs:     []string{"192.168.1.10"},
-				Enabled: true,
 			},
 		},
 	}
@@ -302,7 +292,7 @@ func TestConcurrentAccess(t *testing.T) {
 			for j := 0; j < 100; j++ {
 				_ = cache.Get("test.gslb.elchi", dns.TypeA)
 				_ = cache.GetVersionHash()
-				_ = cache.Count()
+				_ = cache.DomainCount()
 			}
 		}()
 	}
@@ -344,7 +334,6 @@ func BenchmarkGet(b *testing.B) {
 				Type:    "A",
 				TTL:     300,
 				IPs:     []string{"192.168.1.10", "192.168.1.11", "192.168.1.12"},
-				Enabled: true,
 			},
 		},
 	}
@@ -368,14 +357,12 @@ func BenchmarkReplaceFromSnapshot(b *testing.B) {
 				Type:    "A",
 				TTL:     300,
 				IPs:     []string{"192.168.1.10"},
-				Enabled: true,
 			},
 			{
 				Name:    "test2.gslb.elchi",
 				Type:    "A",
 				TTL:     300,
 				IPs:     []string{"192.168.2.10"},
-				Enabled: true,
 			},
 		},
 	}
@@ -387,12 +374,12 @@ func BenchmarkReplaceFromSnapshot(b *testing.B) {
 }
 
 func TestBuildDNSRecords_CNAME_Failover(t *testing.T) {
+	// When IPs is empty and failover is set, return CNAME
 	record := DNSRecord{
 		Name:     "abc.asya-gslb.elchi",
 		Type:     "A",
 		TTL:      20,
-		IPs:      []string{"10.10.1.20", "10.10.1.21"},
-		Enabled:  false,
+		IPs:      []string{}, // Empty IPs triggers failover
 		Failover: "abc.avrupa-gslb.elchi",
 	}
 
@@ -419,34 +406,33 @@ func TestBuildDNSRecords_CNAME_Failover(t *testing.T) {
 	}
 }
 
-func TestBuildDNSRecords_CNAME_Failover_EmptyTarget(t *testing.T) {
+func TestBuildDNSRecords_EmptyIPs_NoFailover(t *testing.T) {
+	// When IPs is empty and no failover, return nil (skip record)
 	record := DNSRecord{
 		Name:     "abc.asya-gslb.elchi",
 		Type:     "A",
 		TTL:      20,
-		IPs:      []string{"10.10.1.20"},
-		Enabled:  false,
-		Failover: "", // Empty failover
+		IPs:      []string{}, // Empty IPs
+		Failover: "",         // No failover
 	}
 
-	_, err := buildDNSRecords(record, 300)
-	if err == nil {
-		t.Fatal("Expected error when failover is empty but enabled=false, got nil")
+	rrs, err := buildDNSRecords(record, 300)
+	if err != nil {
+		t.Fatalf("buildDNSRecords should not return error: %v", err)
 	}
 
-	expectedErr := "is disabled but failover is empty"
-	if !contains(err.Error(), expectedErr) {
-		t.Errorf("Expected error containing '%s', got '%s'", expectedErr, err.Error())
+	if rrs != nil {
+		t.Errorf("Expected nil (skip record), got %d records", len(rrs))
 	}
 }
 
-func TestBuildDNSRecords_EnabledTrue_IgnoresFailover(t *testing.T) {
+func TestBuildDNSRecords_WithIPs_IgnoresFailover(t *testing.T) {
+	// When IPs is set, failover is ignored - return A records
 	record := DNSRecord{
 		Name:     "abc.asya-gslb.elchi",
 		Type:     "A",
 		TTL:      20,
 		IPs:      []string{"10.10.1.20", "10.10.1.21"},
-		Enabled:  true,
 		Failover: "abc.avrupa-gslb.elchi", // Should be ignored
 	}
 
@@ -478,16 +464,14 @@ func TestCache_CNAME_Failover_Integration(t *testing.T) {
 				Name:     "service1.gslb.elchi",
 				Type:     "A",
 				TTL:      30,
-				IPs:      []string{"192.168.1.10"},
-				Enabled:  false,
+				IPs:      []string{}, // Empty IPs triggers failover
 				Failover: "service1-backup.gslb.elchi",
 			},
 			{
-				Name:    "service1-backup.gslb.elchi",
-				Type:    "A",
-				TTL:     30,
-				IPs:     []string{"192.168.2.10", "192.168.2.11"},
-				Enabled: true,
+				Name: "service1-backup.gslb.elchi",
+				Type: "A",
+				TTL:  30,
+				IPs:  []string{"192.168.2.10", "192.168.2.11"},
 			},
 		},
 	}
@@ -516,6 +500,109 @@ func TestCache_CNAME_Failover_Integration(t *testing.T) {
 	aRRs := cache.Get("service1-backup.gslb.elchi.", dns.TypeA)
 	if len(aRRs) != 2 {
 		t.Fatalf("Expected 2 A records for backup service, got %d", len(aRRs))
+	}
+}
+
+func TestBuildDNSRecords_CNAME_EmptyIPs(t *testing.T) {
+	// Test case: IPs empty but enabled=true should still return CNAME
+	record := DNSRecord{
+		Name:     "service.region1.elchi",
+		Type:     "A",
+		TTL:      30,
+		IPs:      []string{}, // Empty IPs - no healthy endpoints
+		Failover: "service.region2.elchi",
+	}
+
+	rrs, err := buildDNSRecords(record, 300)
+	if err != nil {
+		t.Fatalf("buildDNSRecords failed: %v", err)
+	}
+
+	if len(rrs) != 1 {
+		t.Fatalf("Expected 1 CNAME record when IPs empty, got %d", len(rrs))
+	}
+
+	cname, ok := rrs[0].(*dns.CNAME)
+	if !ok {
+		t.Fatal("Expected CNAME record when IPs empty")
+	}
+
+	if cname.Target != "service.region2.elchi." {
+		t.Errorf("Expected CNAME to service.region2.elchi., got %s", cname.Target)
+	}
+
+	if cname.Hdr.Ttl != 30 {
+		t.Errorf("Expected TTL 30, got %d", cname.Hdr.Ttl)
+	}
+}
+
+func TestBuildDNSRecords_CNAME_EmptyIPs_NoFailover(t *testing.T) {
+	// Test case: IPs empty and no failover should return nil (skip record)
+	record := DNSRecord{
+		Name:     "service.region1.elchi",
+		Type:     "A",
+		TTL:      30,
+		IPs:      []string{}, // Empty IPs
+		Failover: "",         // No failover configured
+	}
+
+	rrs, err := buildDNSRecords(record, 300)
+	if err != nil {
+		t.Fatalf("buildDNSRecords should not return error: %v", err)
+	}
+
+	if rrs != nil {
+		t.Errorf("Expected nil (skip record) when IPs empty and no failover, got %d records", len(rrs))
+	}
+}
+
+func TestCache_CNAME_EmptyIPs_Integration(t *testing.T) {
+	cache := NewRecordCache("gslb.elchi.")
+
+	snapshot := &DNSSnapshot{
+		Zone:        "gslb.elchi.",
+		VersionHash: "v1",
+		Records: []DNSRecord{
+			{
+				Name:     "api-asia.gslb.elchi",
+				Type:     "A",
+				TTL:      20,
+				IPs:      []string{}, // No healthy endpoints in Asia
+				Failover: "api-europe.gslb.elchi",
+			},
+			{
+				Name:    "api-europe.gslb.elchi",
+				Type:    "A",
+				TTL:     20,
+				IPs:     []string{"10.20.1.10", "10.20.1.11"},
+			},
+		},
+	}
+
+	err := cache.ReplaceFromSnapshot(snapshot, 300)
+	if err != nil {
+		t.Fatalf("ReplaceFromSnapshot failed: %v", err)
+	}
+
+	// Query for Asia service with empty IPs should return CNAME
+	rrs := cache.Get("api-asia.gslb.elchi.", dns.TypeCNAME)
+	if len(rrs) != 1 {
+		t.Fatalf("Expected 1 CNAME record for api-asia.gslb.elchi, got %d", len(rrs))
+	}
+
+	cname, ok := rrs[0].(*dns.CNAME)
+	if !ok {
+		t.Fatal("Expected CNAME record when IPs empty")
+	}
+
+	if cname.Target != "api-europe.gslb.elchi." {
+		t.Errorf("Expected CNAME to api-europe.gslb.elchi., got %s", cname.Target)
+	}
+
+	// Query for Europe service should return A records
+	aRRs := cache.Get("api-europe.gslb.elchi.", dns.TypeA)
+	if len(aRRs) != 2 {
+		t.Fatalf("Expected 2 A records for Europe service, got %d", len(aRRs))
 	}
 }
 

@@ -59,6 +59,15 @@ run: coredns-register
 		echo "Error: Corefile not found. Run 'make setup' first."; \
 		exit 1; \
 	fi
+	@echo "Starting CoreDNS with elchi plugin on port 1053..."
+	@cd $(COREDNS_DIR) && go run . -conf ../Corefile
+
+.PHONY: run-mock
+run-mock: coredns-register
+	@if [ ! -f Corefile ]; then \
+		echo "Error: Corefile not found. Run 'make setup' first."; \
+		exit 1; \
+	fi
 	@echo "Starting mock Elchi controller on :1052..."
 	@go run ./mock-controller &
 	@echo $$! > .mock-controller.pid

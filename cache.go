@@ -41,6 +41,7 @@ func (c *RecordCache) ReplaceFromSnapshot(snapshot *DNSSnapshot, defaultTTL uint
 
 	// Build new cache from snapshot
 	newRecords := make(map[string]map[uint16][]dns.RR)
+	var loaded, skipped int
 
 	for _, record := range snapshot.Records {
 		// Normalize domain name
@@ -49,6 +50,7 @@ func (c *RecordCache) ReplaceFromSnapshot(snapshot *DNSSnapshot, defaultTTL uint
 		// Validate record is within our zone
 		if !strings.HasSuffix(domain, c.zone) && domain != c.zone {
 			log.Warningf("Skipping record %s: not in zone %s", domain, c.zone)
+			skipped++
 			continue
 		}
 
@@ -56,10 +58,18 @@ func (c *RecordCache) ReplaceFromSnapshot(snapshot *DNSSnapshot, defaultTTL uint
 		rrs, err := buildDNSRecords(record, defaultTTL)
 		if err != nil {
 			log.Warningf("Failed to build DNS records for %s: %v", record.Name, err)
+			skipped++
+			continue
+		}
+
+		// nil means record was skipped (no IPs, no failover)
+		if rrs == nil {
+			skipped++
 			continue
 		}
 
 		if len(rrs) == 0 {
+			skipped++
 			continue
 		}
 
@@ -73,6 +83,7 @@ func (c *RecordCache) ReplaceFromSnapshot(snapshot *DNSSnapshot, defaultTTL uint
 
 		// Append RRs to cache
 		newRecords[domain][qtype] = append(newRecords[domain][qtype], rrs...)
+		loaded++
 	}
 
 	// Atomically replace cache
@@ -80,16 +91,10 @@ func (c *RecordCache) ReplaceFromSnapshot(snapshot *DNSSnapshot, defaultTTL uint
 	c.records = newRecords
 	c.versionHash = snapshot.VersionHash
 	c.updatedAt = time.Now()
-
-	// Update cache size metric
-	recordCount := 0
-	for _, qtypeMap := range c.records {
-		for _, rrs := range qtypeMap {
-			recordCount += len(rrs)
-		}
-	}
-	cacheSize.WithLabelValues(c.zone).Set(float64(recordCount))
+	recordCount := c.updateCacheSizeMetric()
 	c.mu.Unlock()
+
+	log.Infof("Snapshot loaded: %d records loaded, %d skipped (total RRs: %d)", loaded, skipped, recordCount)
 
 	return nil
 }
@@ -126,11 +131,24 @@ func (c *RecordCache) GetVersionHash() string {
 	return c.versionHash
 }
 
-// Count returns the total number of unique domains in the cache.
-func (c *RecordCache) Count() int {
+// DomainCount returns the total number of unique domains in the cache.
+func (c *RecordCache) DomainCount() int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return len(c.records)
+}
+
+// RRCount returns the total number of resource records (RRs) in the cache.
+func (c *RecordCache) RRCount() int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	count := 0
+	for _, qtypeMap := range c.records {
+		for _, rrs := range qtypeMap {
+			count += len(rrs)
+		}
+	}
+	return count
 }
 
 // Update merges new records into the cache (used by webhook /notify endpoint).
@@ -176,15 +194,7 @@ func (c *RecordCache) Update(records []DNSRecord, defaultTTL uint32) error {
 	}
 
 	c.updatedAt = time.Now()
-
-	// Update cache size metric
-	recordCount := 0
-	for _, qtypeMap := range c.records {
-		for _, rrs := range qtypeMap {
-			recordCount += len(rrs)
-		}
-	}
-	cacheSize.WithLabelValues(c.zone).Set(float64(recordCount))
+	c.updateCacheSizeMetric()
 
 	return nil
 }
@@ -230,15 +240,7 @@ func (c *RecordCache) Delete(deletes []DeleteRecord) error {
 	}
 
 	c.updatedAt = time.Now()
-
-	// Update cache size metric
-	recordCount := 0
-	for _, qtypeMap := range c.records {
-		for _, rrs := range qtypeMap {
-			recordCount += len(rrs)
-		}
-	}
-	cacheSize.WithLabelValues(c.zone).Set(float64(recordCount))
+	c.updateCacheSizeMetric()
 
 	return nil
 }
@@ -310,24 +312,23 @@ func buildDNSRecords(record DNSRecord, defaultTTL uint32) ([]dns.RR, error) {
 		ttl = defaultTTL
 	}
 
-	// Check if failover is active (enabled=false)
-	if !record.Enabled {
-		// If failover is empty, return error (will result in NXDOMAIN)
-		if record.Failover == "" {
-			return nil, fmt.Errorf("record %s is disabled but failover is empty", record.Name)
+	// Check if failover is needed (IPs empty)
+	if len(record.IPs) == 0 {
+		// If failover is configured, return CNAME
+		if record.Failover != "" {
+			cname := &dns.CNAME{
+				Hdr: dns.RR_Header{
+					Name:   name,
+					Rrtype: dns.TypeCNAME,
+					Class:  dns.ClassINET,
+					Ttl:    ttl,
+				},
+				Target: normalizeDomain(record.Failover),
+			}
+			return []dns.RR{cname}, nil
 		}
-
-		// Build CNAME record pointing to failover
-		cname := &dns.CNAME{
-			Hdr: dns.RR_Header{
-				Name:   name,
-				Rrtype: dns.TypeCNAME,
-				Class:  dns.ClassINET,
-				Ttl:    ttl,
-			},
-			Target: normalizeDomain(record.Failover),
-		}
-		return []dns.RR{cname}, nil
+		// No IPs and no failover - skip this record (will result in NXDOMAIN)
+		return nil, nil
 	}
 
 	// Build RRs based on record type
@@ -396,6 +397,19 @@ func buildDNSRecords(record DNSRecord, defaultTTL uint32) ([]dns.RR, error) {
 	}
 
 	return rrs, nil
+}
+
+// updateCacheSizeMetric calculates and updates the cache size prometheus metric.
+// Must be called while holding the mutex lock.
+func (c *RecordCache) updateCacheSizeMetric() int {
+	count := 0
+	for _, qtypeMap := range c.records {
+		for _, rrs := range qtypeMap {
+			count += len(rrs)
+		}
+	}
+	cacheSize.WithLabelValues(c.zone).Set(float64(count))
+	return count
 }
 
 // normalizeDomain normalizes a domain name to FQDN format.

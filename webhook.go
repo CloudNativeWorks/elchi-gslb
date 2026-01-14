@@ -1,6 +1,7 @@
 package elchi
 
 import (
+	"bytes"
 	"context"
 	"crypto/subtle"
 	"encoding/json"
@@ -10,6 +11,22 @@ import (
 	"sync"
 	"time"
 )
+
+// writeJSON encodes the response as JSON and writes it to the response writer.
+// It uses a buffer to ensure headers are only written on successful encoding.
+func writeJSON(w http.ResponseWriter, statusCode int, v any) {
+	buf := &bytes.Buffer{}
+	if err := json.NewEncoder(buf).Encode(v); err != nil {
+		log.Errorf("Failed to encode JSON response: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	if _, err := w.Write(buf.Bytes()); err != nil {
+		log.Errorf("Failed to write response: %v", err)
+	}
+}
 
 // SyncStatus tracks the last sync operation status.
 type SyncStatus struct {
@@ -167,11 +184,7 @@ func (ws *WebhookServer) handleNotify(w http.ResponseWriter, r *http.Request) {
 		Updated: updated,
 		Deleted: deleted,
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		log.Errorf("Failed to encode notify response: %v", err)
-	}
+	writeJSON(w, http.StatusOK, resp)
 }
 
 // HealthResponse represents the GET /health response.
@@ -196,7 +209,7 @@ func (ws *WebhookServer) handleHealth(w http.ResponseWriter, r *http.Request) {
 
 	resp := HealthResponse{
 		Zone:           ws.elchi.Zone,
-		RecordsCount:   ws.elchi.cache.Count(),
+		RecordsCount:   ws.elchi.cache.RRCount(),
 		VersionHash:    ws.elchi.cache.GetVersionHash(),
 		LastSync:       lastSync.Format(time.RFC3339),
 		LastSyncStatus: syncStatus,
@@ -208,20 +221,13 @@ func (ws *WebhookServer) handleHealth(w http.ResponseWriter, r *http.Request) {
 		resp.Status = "degraded"
 		resp.Error = lastError
 		webhookRequests.WithLabelValues("health", "success").Inc()
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusServiceUnavailable)
-		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			log.Errorf("Failed to encode health response: %v", err)
-		}
+		writeJSON(w, http.StatusServiceUnavailable, resp)
 		return
 	}
 
 	resp.Status = "healthy"
 	webhookRequests.WithLabelValues("health", "success").Inc()
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		log.Errorf("Failed to encode health response: %v", err)
-	}
+	writeJSON(w, http.StatusOK, resp)
 }
 
 // RecordsResponse represents the GET /records response.
@@ -239,8 +245,8 @@ func (ws *WebhookServer) handleRecords(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get query parameters for filtering
-	nameFilter := r.URL.Query().Get("name")
+	// Get query parameters for filtering (DNS names are case-insensitive)
+	nameFilter := strings.ToLower(r.URL.Query().Get("name"))
 	typeFilter := strings.ToUpper(r.URL.Query().Get("type"))
 
 	// Get all records from cache
@@ -249,8 +255,8 @@ func (ws *WebhookServer) handleRecords(w http.ResponseWriter, r *http.Request) {
 	// Apply filters
 	var filteredRecords []DNSRecord
 	for _, record := range allRecords {
-		// Filter by name if specified
-		if nameFilter != "" && !strings.Contains(record.Name, nameFilter) {
+		// Filter by name if specified (case-insensitive)
+		if nameFilter != "" && !strings.Contains(strings.ToLower(record.Name), nameFilter) {
 			continue
 		}
 
@@ -271,9 +277,5 @@ func (ws *WebhookServer) handleRecords(w http.ResponseWriter, r *http.Request) {
 		Count:       len(filteredRecords),
 		Records:     filteredRecords,
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		log.Errorf("Failed to encode records response: %v", err)
-	}
+	writeJSON(w, http.StatusOK, resp)
 }

@@ -113,7 +113,7 @@ func (e *Elchi) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) 
 	m.Authoritative = true
 	m.Answer = rrs
 
-	log.Infof("Returning %d records for %s", len(m.Answer), qname)
+	log.Debugf("Returning %d records for %s", len(m.Answer), qname)
 	if err := w.WriteMsg(m); err != nil {
 		log.Errorf("Failed to write DNS response: %v", err)
 	}
@@ -190,81 +190,84 @@ func (e *Elchi) backgroundSync() {
 			return
 
 		case <-ticker.C:
-			// Perform sync with timeout
-			ctx, cancel := context.WithTimeout(context.Background(), e.Timeout)
-
-			currentHash := e.cache.GetVersionHash()
-
-			if currentHash == "" {
-				// No snapshot yet, try to fetch initial
-				log.Debug("No snapshot yet, attempting initial fetch")
-
-				// Track sync duration
-				start := time.Now()
-				snapshot, err := e.client.FetchSnapshot(ctx)
-				syncDuration.WithLabelValues(e.Zone, "snapshot").Observe(time.Since(start).Seconds())
-
-				if err != nil {
-					log.Warningf("Snapshot fetch failed: %v", err)
-					syncErrors.WithLabelValues(e.Zone, "snapshot").Inc()
-					e.syncStatus.Update("failed", err)
-					cancel()
-					continue
-				}
-
-				if err := e.cache.ReplaceFromSnapshot(snapshot, e.TTL); err != nil {
-					log.Errorf("Failed to load snapshot: %v", err)
-					syncErrors.WithLabelValues(e.Zone, "snapshot").Inc()
-					e.syncStatus.Update("failed", err)
-				} else {
-					log.Infof("Snapshot loaded: %d records, hash=%s",
-						len(snapshot.Records), snapshot.VersionHash)
-					e.syncStatus.Update("success", nil)
-				}
-			} else {
-				// Have a snapshot, check for changes
-				log.Debugf("Checking for changes since hash=%s", currentHash)
-
-				// Track sync duration
-				start := time.Now()
-				changes, err := e.client.CheckChanges(ctx, currentHash)
-				syncDuration.WithLabelValues(e.Zone, "changes").Observe(time.Since(start).Seconds())
-
-				if err != nil {
-					log.Warningf("Change check failed: %v", err)
-					syncErrors.WithLabelValues(e.Zone, "changes").Inc()
-					e.syncStatus.Update("failed", err)
-					cancel()
-					continue
-				}
-
-				if changes.Unchanged {
-					log.Debug("No changes detected")
-					e.syncStatus.Update("success", nil)
-				} else {
-					log.Infof("Changes detected, new hash=%s", changes.VersionHash)
-
-					// Build snapshot from changes response
-					snapshot := &DNSSnapshot{
-						Zone:        changes.Zone,
-						VersionHash: changes.VersionHash,
-						Records:     changes.Records,
-					}
-
-					if err := e.cache.ReplaceFromSnapshot(snapshot, e.TTL); err != nil {
-						log.Errorf("Failed to load updated snapshot: %v", err)
-						syncErrors.WithLabelValues(e.Zone, "changes").Inc()
-						e.syncStatus.Update("failed", err)
-					} else {
-						log.Infof("Cache updated: %d records, hash=%s",
-							len(snapshot.Records), snapshot.VersionHash)
-						e.syncStatus.Update("success", nil)
-					}
-				}
-			}
-
-			cancel()
+			e.performSync()
 		}
+	}
+}
+
+// performSync executes a single sync cycle with proper context management.
+func (e *Elchi) performSync() {
+	ctx, cancel := context.WithTimeout(context.Background(), e.Timeout)
+	defer cancel()
+
+	currentHash := e.cache.GetVersionHash()
+
+	if currentHash == "" {
+		// No snapshot yet, try to fetch initial
+		log.Debug("No snapshot yet, attempting initial fetch")
+
+		// Track sync duration
+		start := time.Now()
+		snapshot, err := e.client.FetchSnapshot(ctx)
+		syncDuration.WithLabelValues(e.Zone, "snapshot").Observe(time.Since(start).Seconds())
+
+		if err != nil {
+			log.Warningf("Snapshot fetch failed: %v", err)
+			syncErrors.WithLabelValues(e.Zone, "snapshot").Inc()
+			e.syncStatus.Update("failed", err)
+			return
+		}
+
+		if err := e.cache.ReplaceFromSnapshot(snapshot, e.TTL); err != nil {
+			log.Errorf("Failed to load snapshot: %v", err)
+			syncErrors.WithLabelValues(e.Zone, "snapshot").Inc()
+			e.syncStatus.Update("failed", err)
+		} else {
+			log.Infof("Snapshot loaded: %d records, hash=%s",
+				len(snapshot.Records), snapshot.VersionHash)
+			e.syncStatus.Update("success", nil)
+		}
+		return
+	}
+
+	// Have a snapshot, check for changes
+	log.Debugf("Checking for changes since hash=%s", currentHash)
+
+	// Track sync duration
+	start := time.Now()
+	changes, err := e.client.CheckChanges(ctx, currentHash)
+	syncDuration.WithLabelValues(e.Zone, "changes").Observe(time.Since(start).Seconds())
+
+	if err != nil {
+		log.Warningf("Change check failed: %v", err)
+		syncErrors.WithLabelValues(e.Zone, "changes").Inc()
+		e.syncStatus.Update("failed", err)
+		return
+	}
+
+	if changes.Unchanged {
+		log.Debug("No changes detected")
+		e.syncStatus.Update("success", nil)
+		return
+	}
+
+	log.Infof("Changes detected, new hash=%s", changes.VersionHash)
+
+	// Build snapshot from changes response
+	snapshot := &DNSSnapshot{
+		Zone:        changes.Zone,
+		VersionHash: changes.VersionHash,
+		Records:     changes.Records,
+	}
+
+	if err := e.cache.ReplaceFromSnapshot(snapshot, e.TTL); err != nil {
+		log.Errorf("Failed to load updated snapshot: %v", err)
+		syncErrors.WithLabelValues(e.Zone, "changes").Inc()
+		e.syncStatus.Update("failed", err)
+	} else {
+		log.Infof("Cache updated: %d records, hash=%s",
+			len(snapshot.Records), snapshot.VersionHash)
+		e.syncStatus.Update("success", nil)
 	}
 }
 
