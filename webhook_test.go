@@ -26,10 +26,10 @@ func TestHandleNotify_Success(t *testing.T) {
 	notifyReq := NotifyRequest{
 		Records: []DNSRecord{
 			{
-				Name:    "test.gslb.elchi",
-				Type:    "A",
-				TTL:     300,
-				IPs:     []string{"192.168.1.10"},
+				Name: "test.gslb.elchi",
+				Type: "A",
+				TTL:  300,
+				IPs:  []string{"192.168.1.10"},
 			},
 		},
 	}
@@ -84,10 +84,10 @@ func TestHandleNotify_WithDeletes(t *testing.T) {
 		VersionHash: "test123",
 		Records: []DNSRecord{
 			{
-				Name:    "old.gslb.elchi",
-				Type:    "A",
-				TTL:     300,
-				IPs:     []string{"192.168.1.10"},
+				Name: "old.gslb.elchi",
+				Type: "A",
+				TTL:  300,
+				IPs:  []string{"192.168.1.10"},
 			},
 		},
 	}

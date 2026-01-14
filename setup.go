@@ -10,7 +10,7 @@ import (
 	"github.com/coredns/coredns/plugin"
 )
 
-// Configuration defaults
+// Configuration defaults.
 const (
 	defaultTTL          = 300              // Default TTL in seconds (5 minutes)
 	defaultSyncInterval = 5 * time.Minute  // Default sync interval

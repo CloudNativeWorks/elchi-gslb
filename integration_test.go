@@ -24,10 +24,10 @@ func TestIntegration_FullLifecycle(t *testing.T) {
 		VersionHash: "v1",
 		Records: []DNSRecord{
 			{
-				Name:    "test.gslb.elchi",
-				Type:    "A",
-				TTL:     300,
-				IPs:     []string{"192.168.1.10", "192.168.1.11"},
+				Name: "test.gslb.elchi",
+				Type: "A",
+				TTL:  300,
+				IPs:  []string{"192.168.1.10", "192.168.1.11"},
 			},
 		},
 	})
@@ -93,10 +93,10 @@ func TestIntegration_FullLifecycle(t *testing.T) {
 		VersionHash: "v2",
 		Records: []DNSRecord{
 			{
-				Name:    "test.gslb.elchi",
-				Type:    "A",
-				TTL:     300,
-				IPs:     []string{"192.168.2.20"},
+				Name: "test.gslb.elchi",
+				Type: "A",
+				TTL:  300,
+				IPs:  []string{"192.168.2.20"},
 			},
 		},
 	})
@@ -166,10 +166,10 @@ func TestIntegration_ErrorRecovery(t *testing.T) {
 		VersionHash: "v1",
 		Records: []DNSRecord{
 			{
-				Name:    "test.gslb.elchi",
-				Type:    "A",
-				TTL:     300,
-				IPs:     []string{"192.168.1.10"},
+				Name: "test.gslb.elchi",
+				Type: "A",
+				TTL:  300,
+				IPs:  []string{"192.168.1.10"},
 			},
 		},
 	})
@@ -246,10 +246,10 @@ func TestIntegration_ErrorRecovery(t *testing.T) {
 		VersionHash: "v2",
 		Records: []DNSRecord{
 			{
-				Name:    "test.gslb.elchi",
-				Type:    "A",
-				TTL:     300,
-				IPs:     []string{"192.168.2.20"},
+				Name: "test.gslb.elchi",
+				Type: "A",
+				TTL:  300,
+				IPs:  []string{"192.168.2.20"},
 			},
 		},
 	})
@@ -295,10 +295,10 @@ func TestIntegration_ConcurrentQueries(t *testing.T) {
 		VersionHash: "v1",
 		Records: []DNSRecord{
 			{
-				Name:    "test.gslb.elchi",
-				Type:    "A",
-				TTL:     300,
-				IPs:     []string{"192.168.1.10"},
+				Name: "test.gslb.elchi",
+				Type: "A",
+				TTL:  300,
+				IPs:  []string{"192.168.1.10"},
 			},
 		},
 	})
@@ -378,10 +378,10 @@ func TestIntegration_MultiZone(t *testing.T) {
 		VersionHash: "v1",
 		Records: []DNSRecord{
 			{
-				Name:    "test.gslb.elchi",
-				Type:    "A",
-				TTL:     300,
-				IPs:     []string{"192.168.1.10"},
+				Name: "test.gslb.elchi",
+				Type: "A",
+				TTL:  300,
+				IPs:  []string{"192.168.1.10"},
 			},
 		},
 	})

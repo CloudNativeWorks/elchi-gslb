@@ -22,10 +22,10 @@ func TestServeDNS_InZone(t *testing.T) {
 		VersionHash: "test123",
 		Records: []DNSRecord{
 			{
-				Name:    "test.gslb.elchi",
-				Type:    "A",
-				TTL:     300,
-				IPs:     []string{"192.168.1.10"},
+				Name: "test.gslb.elchi",
+				Type: "A",
+				TTL:  300,
+				IPs:  []string{"192.168.1.10"},
 			},
 		},
 	}
@@ -210,10 +210,10 @@ func TestReady(t *testing.T) {
 					VersionHash: "abc123",
 					Records: []DNSRecord{
 						{
-							Name:    "test.gslb.elchi",
-							Type:    "A",
-							TTL:     300,
-							IPs:     []string{"192.168.1.10"},
+							Name: "test.gslb.elchi",
+							Type: "A",
+							TTL:  300,
+							IPs:  []string{"192.168.1.10"},
 						},
 					},
 				}
