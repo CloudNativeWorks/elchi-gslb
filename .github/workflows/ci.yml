@@ -225,6 +225,14 @@ jobs:
           name: coredns-elchi-linux-amd64
           path: ./artifacts
 
+      - name: Prepare install script
+        if: steps.check_release.outputs.created == 'true'
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+          # Update SCRIPT_VERSION in install.sh to match release version
+          sed -i "s/^SCRIPT_VERSION=.*/SCRIPT_VERSION=\"${VERSION}\"/" install.sh
+          chmod +x install.sh
+
       - name: Create GitHub Release
         if: steps.check_release.outputs.created == 'true'
         run: |
@@ -247,7 +255,24 @@ jobs:
             echo ""
             echo "${CHANGELOG}"
             echo ""
-            echo "### Installation"
+            echo "### Quick Install"
+            echo ""
+            echo "One-liner installation (Linux with systemd):"
+            echo ""
+            echo '```bash'
+            echo "curl -fsSL https://github.com/cloudnativeworks/elchi-gslb/releases/download/v${VERSION}/install.sh | sudo bash"
+            echo '```'
+            echo ""
+            echo "With custom configuration:"
+            echo ""
+            echo '```bash'
+            echo "curl -fsSL https://github.com/cloudnativeworks/elchi-gslb/releases/download/v${VERSION}/install.sh | sudo bash -s -- \\"
+            echo "  --zone lb.example.com \\"
+            echo "  --endpoint http://controller:8080 \\"
+            echo "  --secret your-secret-here"
+            echo '```'
+            echo ""
+            echo "### Installation Options"
             echo ""
             echo "#### Using Docker"
             echo ""
@@ -256,12 +281,12 @@ jobs:
             echo "docker pull cloudnativeworks/elchi-coredns:latest"
             echo '```'
             echo ""
-            echo "#### Download Binary (Linux AMD64)"
+            echo "#### Manual Binary Installation (Linux AMD64)"
             echo ""
             echo '```bash'
             echo "wget https://github.com/cloudnativeworks/elchi-gslb/releases/download/v${VERSION}/coredns-elchi-linux-amd64-v${VERSION}"
             echo "chmod +x coredns-elchi-linux-amd64-v${VERSION}"
-            echo "sudo mv coredns-elchi-linux-amd64-v${VERSION} /usr/local/bin/coredns"
+            echo "sudo mv coredns-elchi-linux-amd64-v${VERSION} /usr/local/bin/coredns-elchi"
             echo '```'
             echo ""
             echo "#### From Source"
@@ -273,6 +298,12 @@ jobs:
             echo "make build"
             echo '```'
             echo ""
+            echo "### Uninstall"
+            echo ""
+            echo '```bash'
+            echo "curl -fsSL https://github.com/cloudnativeworks/elchi-gslb/releases/download/v${VERSION}/install.sh | sudo bash -s -- --uninstall"
+            echo '```'
+            echo ""
             echo "### CoreDNS Version"
             echo ""
             echo "Built with CoreDNS v1.13.2"
@@ -282,12 +313,13 @@ jobs:
             echo "- [README](https://github.com/cloudnativeworks/elchi-gslb/blob/v${VERSION}/README.md)"
           } > /tmp/release_notes.md
 
-          # Create release with binary and source archive
+          # Create release with binary, source archive, and install script
           gh release create "v${VERSION}" \
             --title "Elchi GSLB v${VERSION}" \
             --notes-file /tmp/release_notes.md \
             ${ARCHIVE_NAME}.tar.gz \
-            ./artifacts/coredns-elchi-linux-amd64-v${VERSION}
+            ./artifacts/coredns-elchi-linux-amd64-v${VERSION} \
+            install.sh
 
           echo "✅ Release v${VERSION} created"
 
