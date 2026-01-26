@@ -30,6 +30,7 @@ The plugin answers DNS queries from a pre-built cache synchronized from an exter
     [sync_interval **DURATION**]
     [timeout **DURATION**]
     [webhook [**ADDRESS**]]
+    [tls_skip_verify]
     [fallthrough [**ZONES**...]]
 }
 ~~~
@@ -40,6 +41,7 @@ The plugin answers DNS queries from a pre-built cache synchronized from an exter
 - **DURATION** is a Go duration string (e.g., `5m`, `30s`) for sync_interval or timeout
   - **sync_interval** specifies how often to check for changes (optional, default: `5m`, minimum: `1m`)
   - **timeout** specifies HTTP request timeout (optional, default: `10s`, minimum: `1s`)
+- **tls_skip_verify** skips TLS certificate verification (optional, for self-signed certificates)
 - **ADDRESS** is the webhook server listen address (optional, default: `:8053`)
 - **ZONES** are zones to fall through for (optional, defaults to all zones if fallthrough is enabled)
 
@@ -97,6 +99,20 @@ gslb.staging.example.org {
     }
 }
 ~~~
+
+HTTPS with self-signed certificate:
+
+~~~ corefile
+gslb.example.org {
+    elchi {
+        endpoint https://elchi-backend:8443
+        secret my-shared-secret
+        tls_skip_verify
+    }
+}
+~~~
+
+> **Warning**: `tls_skip_verify` disables TLS certificate verification. Only use this for testing or when using self-signed certificates in a trusted network. For production, use proper CA-signed certificates.
 
 CNAME-based regional failover:
 

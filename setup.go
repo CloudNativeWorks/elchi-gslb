@@ -134,6 +134,11 @@ func parseElchi(c *caddy.Controller) (*Elchi, error) {
 				// Can optionally specify zones to fall through for
 				e.Fall.SetZonesFromArgs(c.RemainingArgs())
 
+			case "tls_skip_verify":
+				// tls_skip_verify directive: skip TLS certificate verification
+				// WARNING: This is insecure and should only be used for testing with self-signed certs
+				e.TLSSkipVerify = true
+
 			default:
 				return nil, c.Errf("unknown directive '%s'", c.Val())
 			}

@@ -41,7 +41,7 @@ func TestIntegration_FullLifecycle(t *testing.T) {
 		Endpoint:     server.URL,
 		Secret:       "test-secret",
 		cache:        NewRecordCache("gslb.elchi."),
-		client:       NewElchiClient(server.URL, "gslb.elchi.", "test-secret", 10*time.Second),
+		client:       NewElchiClient(server.URL, "gslb.elchi.", "test-secret", 10*time.Second, false),
 		SyncInterval: 100 * time.Millisecond,
 		TTL:          300,
 		Next:         test.NextHandler(dns.RcodeSuccess, nil),
@@ -183,7 +183,7 @@ func TestIntegration_ErrorRecovery(t *testing.T) {
 		Endpoint: server.URL,
 		Secret:   "test-secret",
 		cache:    NewRecordCache("gslb.elchi."),
-		client:   NewElchiClient(server.URL, "gslb.elchi.", "test-secret", 10*time.Second),
+		client:   NewElchiClient(server.URL, "gslb.elchi.", "test-secret", 10*time.Second, false),
 		TTL:      300,
 		Next:     test.NextHandler(dns.RcodeSuccess, nil),
 	}
@@ -312,7 +312,7 @@ func TestIntegration_ConcurrentQueries(t *testing.T) {
 		Endpoint: server.URL,
 		Secret:   "test-secret",
 		cache:    NewRecordCache("gslb.elchi."),
-		client:   NewElchiClient(server.URL, "gslb.elchi.", "test-secret", 10*time.Second),
+		client:   NewElchiClient(server.URL, "gslb.elchi.", "test-secret", 10*time.Second, false),
 		TTL:      300,
 		Next:     test.NextHandler(dns.RcodeSuccess, nil),
 	}
@@ -395,7 +395,7 @@ func TestIntegration_MultiZone(t *testing.T) {
 		Endpoint: server.URL,
 		Secret:   "test-secret",
 		cache:    NewRecordCache("gslb.elchi."),
-		client:   NewElchiClient(server.URL, "gslb.elchi.", "test-secret", 10*time.Second),
+		client:   NewElchiClient(server.URL, "gslb.elchi.", "test-secret", 10*time.Second, false),
 		TTL:      300,
 		Next:     test.NextHandler(dns.RcodeSuccess, nil),
 	}
@@ -457,7 +457,7 @@ func TestIntegration_ChangesNotModified(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := NewElchiClient(server.URL, "gslb.elchi.", "test-secret", 10*time.Second)
+	client := NewElchiClient(server.URL, "gslb.elchi.", "test-secret", 10*time.Second, false)
 
 	// Fetch initial snapshot
 	ctx := context.Background()

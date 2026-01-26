@@ -2,6 +2,7 @@ package elchi
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -44,18 +45,27 @@ type ElchiClient struct {
 }
 
 // NewElchiClient creates a new Elchi DNS API client.
-func NewElchiClient(endpoint, zone, secret string, timeout time.Duration) *ElchiClient {
+func NewElchiClient(endpoint, zone, secret string, timeout time.Duration, tlsSkipVerify bool) *ElchiClient {
+	transport := &http.Transport{
+		MaxIdleConns:        10,
+		MaxIdleConnsPerHost: 10,
+		IdleConnTimeout:     30 * time.Second,
+	}
+
+	// Configure TLS if skip verify is enabled
+	if tlsSkipVerify {
+		transport.TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: true, //nolint:gosec // User explicitly requested to skip TLS verification
+		}
+	}
+
 	return &ElchiClient{
 		endpoint: strings.TrimRight(endpoint, "/"),
 		zone:     strings.TrimSuffix(zone, "."), // Remove trailing dot for API requests
 		secret:   secret,
 		httpClient: &http.Client{
-			Timeout: timeout,
-			Transport: &http.Transport{
-				MaxIdleConns:        10,
-				MaxIdleConnsPerHost: 10,
-				IdleConnTimeout:     30 * time.Second,
-			},
+			Timeout:   timeout,
+			Transport: transport,
 		},
 	}
 }
