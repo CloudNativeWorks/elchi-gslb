@@ -12,13 +12,13 @@ import (
 
 // Configuration defaults.
 const (
-	defaultTTL          = 300              // Default TTL in seconds (5 minutes)
-	defaultSyncInterval = 5 * time.Minute  // Default sync interval
-	defaultTimeout      = 10 * time.Second // Default HTTP timeout
-	defaultWebhookAddr  = ":8053"          // Default webhook server address
-	minSyncInterval     = 1 * time.Minute  // Minimum allowed sync interval
-	minTimeout          = 1 * time.Second  // Minimum allowed timeout
-	minSecretLength     = 8                // Minimum secret length for security
+	defaultTTL          = 300             // Default TTL in seconds (5 minutes)
+	defaultSyncInterval = 5 * time.Minute // Default sync interval
+	defaultTimeout      = 4 * time.Second // Default HTTP timeout
+	defaultWebhookAddr  = ":8053"         // Default webhook server address
+	minSyncInterval     = 5 * time.Second // Minimum allowed sync interval
+	minTimeout          = 1 * time.Second // Minimum allowed timeout
+	minSecretLength     = 8               // Minimum secret length for security
 )
 
 // init registers this plugin within the Caddy plugin framework.
