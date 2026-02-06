@@ -32,18 +32,23 @@ RUN make
 # Stage 2: Runtime image
 FROM alpine:3.21.3
 
-# Install ca-certificates and openssl, update system packages
+# Install ca-certificates, openssl, and libcap (for setcap)
 RUN apk --no-cache update && apk --no-cache upgrade && \
-    apk add --no-cache ca-certificates openssl
+    apk add --no-cache ca-certificates openssl libcap
 
 # Copy CoreDNS binary
 COPY --from=builder /build/coredns/coredns /usr/bin/coredns
 
+# Set capability to allow binding to privileged ports (< 1024) as non-root
+# Must be done AFTER COPY because COPY does not preserve extended attributes (xattr)
+RUN setcap cap_net_bind_service=+ep /usr/bin/coredns && \
+    apk del libcap
+
 # Copy example Corefile
 COPY Corefile.example /etc/coredns/Corefile.example
 
-# Create user for CoreDNS
-RUN addgroup -S coredns && adduser -S -G coredns coredns
+# Create coredns user with specific UID/GID 1000
+RUN addgroup -g 1000 -S coredns && adduser -u 1000 -S -G coredns coredns
 
 # Set ownership
 RUN chown -R coredns:coredns /etc/coredns
@@ -56,8 +61,9 @@ EXPOSE 8053 8053/tcp
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD ["/usr/bin/coredns", "-version"] || exit 1
 
-# Switch to coredns user
-USER coredns
+# Switch to non-root user (UID 1000:1000)
+# The binary has cap_net_bind_service capability to bind port 53
+USER 1000:1000
 
 # Set entrypoint
 ENTRYPOINT ["/usr/bin/coredns"]
