@@ -18,9 +18,9 @@ RUN git clone --depth 1 --branch ${COREDNS_VERSION} https://github.com/coredns/c
 # Copy elchi plugin source
 COPY . /build/elchi-gslb/
 
-# Add elchi plugin to CoreDNS plugin.cfg
+# Add elchi plugin to CoreDNS plugin.cfg (MUST be before file plugin)
 WORKDIR /build/coredns
-RUN echo "elchi:github.com/cloudnativeworks/elchi-gslb" >> plugin.cfg
+RUN sed -i '/^file:file/i elchi:github.com/cloudnativeworks/elchi-gslb' plugin.cfg
 
 # Update go.mod to include elchi plugin
 RUN go mod edit -replace github.com/cloudnativeworks/elchi-gslb=/build/elchi-gslb
