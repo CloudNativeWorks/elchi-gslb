@@ -28,6 +28,7 @@ type Elchi struct {
 	WebhookAddr   string // Address for webhook server (e.g., ":8053")
 	WebhookEnable bool   // Enable webhook server
 	TLSSkipVerify bool   // Skip TLS certificate verification (insecure, for self-signed certs)
+	NodeIP        string // Node IP address sent to controller for identification
 
 	// Client and cache
 	client        *ElchiClient
@@ -137,7 +138,7 @@ func (e *Elchi) Ready() bool {
 
 // InitClient initializes the Elchi backend client and starts the background sync.
 func (e *Elchi) InitClient() error {
-	e.client = NewElchiClient(e.Endpoint, e.Zone, e.Secret, e.Timeout, e.TLSSkipVerify)
+	e.client = NewElchiClient(e.Endpoint, e.Zone, e.Secret, e.NodeIP, e.Timeout, e.TLSSkipVerify)
 	e.cache = NewRecordCache(e.Zone)
 	e.syncStatus = &SyncStatus{lastSyncStatus: "initial"}
 

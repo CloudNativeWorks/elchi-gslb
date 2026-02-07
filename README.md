@@ -26,6 +26,7 @@ The plugin answers DNS queries from a pre-built cache synchronized from an exter
 *elchi* {
     endpoint **URL**
     secret **KEY**
+    node_ip **IP**
     [ttl **SECONDS**]
     [sync_interval **DURATION**]
     [timeout **DURATION**]
@@ -37,10 +38,11 @@ The plugin answers DNS queries from a pre-built cache synchronized from an exter
 
 - **URL** is the Elchi backend API endpoint (required)
 - **KEY** is the shared secret for authentication, must match ELCHI_JWT_SECRET in backend (required, minimum 8 characters)
+- **IP** is the node's IP address, sent to controller for node identification (required, typically `{$NODE_IP}`)
 - **SECONDS** is the default TTL for DNS records without explicit TTL (optional, default: 300)
 - **DURATION** is a Go duration string (e.g., `5m`, `30s`) for sync_interval or timeout
-  - **sync_interval** specifies how often to check for changes (optional, default: `5m`, minimum: `1m`)
-  - **timeout** specifies HTTP request timeout (optional, default: `10s`, minimum: `1s`)
+  - **sync_interval** specifies how often to check for changes (optional, default: `15m`, minimum: `5s`)
+  - **timeout** specifies HTTP request timeout (optional, default: `4s`, minimum: `1s`)
 - **tls_skip_verify** skips TLS certificate verification (optional, for self-signed certificates)
 - **ADDRESS** is the webhook server listen address (optional, default: `:8053`)
 - **ZONES** are zones to fall through for (optional, defaults to all zones if fallthrough is enabled)
@@ -58,27 +60,34 @@ gslb.example.org {
 }
 ~~~
 
-Full configuration with all options:
+Full configuration with all options (production DaemonSet with hostNetwork):
 
 ~~~ corefile
-gslb.example.org {
+gslb.example.org:53 {
+    bind {$NODE_IP}
     elchi {
         endpoint http://elchi-backend:8080
         secret my-shared-secret
+        node_ip {$NODE_IP}
         ttl 300
-        sync_interval 5m
-        timeout 10s
+        sync_interval 1m
+        timeout 4s
         webhook :8053
         fallthrough
     }
+    file /etc/coredns/gslb.example.org.db gslb.example.org
     ready
     prometheus :9253
     log
     errors
 }
 
-. {
-    forward . 8.8.8.8
+.:53 {
+    bind {$NODE_IP}
+    forward . 8.8.8.8 8.8.4.4
+    log
+    errors
+    cache 30
 }
 ~~~
 
@@ -191,11 +200,17 @@ gslb.elchi {
     elchi {
         endpoint http://elchi-backend:8080
         secret your-secret-key
-        sync_interval 5m
+        sync_interval 1m
         webhook :8053
+        fallthrough
     }
     log
     errors
+}
+
+. {
+    forward . 8.8.8.8 8.8.4.4
+    cache 30
 }
 EOF
 
@@ -231,9 +246,9 @@ gslb.example.org {
     elchi {
         endpoint http://localhost:8080
         secret your-secret-key-here
-        sync_interval 5m
-        timeout 10s
         ttl 300
+        sync_interval 1m
+        timeout 4s
         fallthrough
     }
     log
@@ -241,9 +256,10 @@ gslb.example.org {
 }
 
 . {
-    forward . 8.8.8.8
+    forward . 8.8.8.8 8.8.4.4
     log
     errors
+    cache 30
 }
 ```
 
@@ -410,10 +426,12 @@ The plugin can optionally expose webhook endpoints for instant updates, health m
 ### Configuration
 
 ```
-gslb.elchi {
+gslb.elchi:53 {
+    bind {$NODE_IP}
     elchi {
         endpoint http://localhost:8080
         secret your-secret-key-here
+        node_ip {$NODE_IP}
         webhook :8053  # Enable webhook server on port 8053
     }
 }
@@ -829,10 +847,12 @@ The *elchi* plugin exports Prometheus metrics following CoreDNS naming standards
 Configure Prometheus endpoint in your Corefile:
 
 ```
-gslb.elchi {
+gslb.elchi:53 {
+    bind {$NODE_IP}
     elchi {
         endpoint http://localhost:8080
         secret your-secret-key
+        node_ip {$NODE_IP}
     }
     prometheus localhost:9253
 }
@@ -887,7 +907,7 @@ docker run -d \
 - `linux/amd64`
 - `linux/arm64`
 
-### Kubernetes Example
+### Kubernetes Example (DaemonSet with hostNetwork)
 
 ```yaml
 apiVersion: v1
@@ -896,19 +916,25 @@ metadata:
   name: coredns-elchi
 data:
   Corefile: |
-    gslb.elchi {
+    gslb.elchi:53 {
+        bind {$NODE_IP}
         elchi {
             endpoint http://elchi-backend:8080
             secret ${ELCHI_SECRET}
-            sync_interval 5m
+            node_ip {$NODE_IP}
+            sync_interval 1m
             webhook :8053
+            fallthrough
         }
+        file /etc/coredns/gslb.elchi.db gslb.elchi
         prometheus :9253
         errors
         log
     }
-    . {
-        forward . /etc/resolv.conf
+    .:53 {
+        bind {$NODE_IP}
+        forward . 8.8.8.8 8.8.4.4
+        cache 30
     }
 ---
 apiVersion: apps/v1

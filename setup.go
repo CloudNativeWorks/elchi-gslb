@@ -139,6 +139,14 @@ func parseElchi(c *caddy.Controller) (*Elchi, error) {
 				// WARNING: This is insecure and should only be used for testing with self-signed certs
 				e.TLSSkipVerify = true
 
+			case "node_ip":
+				// node_ip directive: identifies this node to the controller
+				// Typically set via env var: node_ip {$NODE_IP}
+				if !c.NextArg() {
+					return nil, c.ArgErr()
+				}
+				e.NodeIP = c.Val()
+
 			default:
 				return nil, c.Errf("unknown directive '%s'", c.Val())
 			}
@@ -154,6 +162,9 @@ func parseElchi(c *caddy.Controller) (*Elchi, error) {
 	}
 	if e.Secret == "" {
 		return nil, fmt.Errorf("secret is required")
+	}
+	if e.NodeIP == "" {
+		return nil, fmt.Errorf("node_ip is required (e.g., node_ip {$NODE_IP})")
 	}
 
 	// Validate secret length (minimum 8 characters for basic security)

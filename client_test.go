@@ -46,7 +46,7 @@ func TestFetchSnapshot_Success(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", 5*time.Second, false)
+	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", 5*time.Second, false)
 
 	// Fetch snapshot
 	ctx := context.Background()
@@ -75,7 +75,7 @@ func TestFetchSnapshot_HTTPError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", 5*time.Second, false)
+	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", 5*time.Second, false)
 
 	ctx := context.Background()
 	_, err := client.FetchSnapshot(ctx)
@@ -93,7 +93,7 @@ func TestFetchSnapshot_InvalidJSON(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", 5*time.Second, false)
+	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", 5*time.Second, false)
 
 	ctx := context.Background()
 	_, err := client.FetchSnapshot(ctx)
@@ -111,7 +111,7 @@ func TestFetchSnapshot_Timeout(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", 100*time.Millisecond, false)
+	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", 100*time.Millisecond, false)
 
 	ctx := context.Background()
 	_, err := client.FetchSnapshot(ctx)
@@ -147,7 +147,7 @@ func TestCheckChanges_Unchanged(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", 5*time.Second, false)
+	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", 5*time.Second, false)
 
 	ctx := context.Background()
 	changes, err := client.CheckChanges(ctx, "abc123")
@@ -182,7 +182,7 @@ func TestCheckChanges_Changed(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", 5*time.Second, false)
+	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", 5*time.Second, false)
 
 	ctx := context.Background()
 	changes, err := client.CheckChanges(ctx, "abc123")
@@ -214,7 +214,7 @@ func TestSignRequest(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewElchiClient(server.URL, "gslb.elchi", "my-secret-key", 5*time.Second, false)
+	client := NewElchiClient(server.URL, "gslb.elchi", "my-secret-key", "", 5*time.Second, false)
 
 	ctx := context.Background()
 	_, _ = client.FetchSnapshot(ctx)

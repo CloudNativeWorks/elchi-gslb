@@ -41,11 +41,12 @@ type ElchiClient struct {
 	endpoint   string
 	zone       string
 	secret     string
+	nodeIP     string
 	httpClient *http.Client
 }
 
 // NewElchiClient creates a new Elchi DNS API client.
-func NewElchiClient(endpoint, zone, secret string, timeout time.Duration, tlsSkipVerify bool) *ElchiClient {
+func NewElchiClient(endpoint, zone, secret, nodeIP string, timeout time.Duration, tlsSkipVerify bool) *ElchiClient {
 	transport := &http.Transport{
 		MaxIdleConns:        10,
 		MaxIdleConnsPerHost: 10,
@@ -63,6 +64,7 @@ func NewElchiClient(endpoint, zone, secret string, timeout time.Duration, tlsSki
 		endpoint: strings.TrimRight(endpoint, "/"),
 		zone:     strings.TrimSuffix(zone, "."), // Remove trailing dot for API requests
 		secret:   secret,
+		nodeIP:   nodeIP,
 		httpClient: &http.Client{
 			Timeout:   timeout,
 			Transport: transport,
@@ -80,6 +82,7 @@ func (c *ElchiClient) FetchSnapshot(ctx context.Context) (*DNSSnapshot, error) {
 
 	q := u.Query()
 	q.Set("zone", c.zone)
+	c.addNodeIP(q)
 	u.RawQuery = q.Encode()
 
 	// Create HTTP request
@@ -139,6 +142,7 @@ func (c *ElchiClient) CheckChanges(ctx context.Context, sinceHash string) (*DNSC
 	q := u.Query()
 	q.Set("zone", c.zone)
 	q.Set("since", sinceHash)
+	c.addNodeIP(q)
 	u.RawQuery = q.Encode()
 
 	// Create HTTP request
@@ -200,4 +204,11 @@ func (c *ElchiClient) CheckChanges(ctx context.Context, sinceHash string) (*DNSC
 func (c *ElchiClient) signRequest(req *http.Request) {
 	req.Header.Set("X-Elchi-Secret", c.secret)
 	req.Header.Set("Accept", "application/json")
+}
+
+// addNodeIP adds the node_ip query parameter if configured.
+func (c *ElchiClient) addNodeIP(q url.Values) {
+	if c.nodeIP != "" {
+		q.Set("node_ip", c.nodeIP)
+	}
 }
