@@ -25,9 +25,9 @@ type Elchi struct {
 	TTL           uint32
 	SyncInterval  time.Duration
 	Timeout       time.Duration
-	WebhookAddr   string // Address for webhook server (e.g., ":8053")
-	WebhookEnable bool   // Enable webhook server
-	TLSSkipVerify bool   // Skip TLS certificate verification (insecure, for self-signed certs)
+	WebhookAddr   string   // Address for webhook server (e.g., ":8053")
+	WebhookEnable bool     // Enable webhook server
+	TLSSkipVerify bool     // Skip TLS certificate verification (insecure, for self-signed certs)
 	NodeIP        string   // Node IP address sent to controller for identification
 	Regions       []string // Region filter for DNS records (empty or ["all"] = no filter)
 
