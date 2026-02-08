@@ -42,11 +42,12 @@ type ElchiClient struct {
 	zone       string
 	secret     string
 	nodeIP     string
+	regions    []string
 	httpClient *http.Client
 }
 
 // NewElchiClient creates a new Elchi DNS API client.
-func NewElchiClient(endpoint, zone, secret, nodeIP string, timeout time.Duration, tlsSkipVerify bool) *ElchiClient {
+func NewElchiClient(endpoint, zone, secret, nodeIP string, regions []string, timeout time.Duration, tlsSkipVerify bool) *ElchiClient {
 	transport := &http.Transport{
 		MaxIdleConns:        10,
 		MaxIdleConnsPerHost: 10,
@@ -65,6 +66,7 @@ func NewElchiClient(endpoint, zone, secret, nodeIP string, timeout time.Duration
 		zone:     strings.TrimSuffix(zone, "."), // Remove trailing dot for API requests
 		secret:   secret,
 		nodeIP:   nodeIP,
+		regions:  regions,
 		httpClient: &http.Client{
 			Timeout:   timeout,
 			Transport: transport,
@@ -83,6 +85,7 @@ func (c *ElchiClient) FetchSnapshot(ctx context.Context) (*DNSSnapshot, error) {
 	q := u.Query()
 	q.Set("zone", c.zone)
 	c.addNodeIP(q)
+	c.addRegions(q)
 	u.RawQuery = q.Encode()
 
 	// Create HTTP request
@@ -143,6 +146,7 @@ func (c *ElchiClient) CheckChanges(ctx context.Context, sinceHash string) (*DNSC
 	q.Set("zone", c.zone)
 	q.Set("since", sinceHash)
 	c.addNodeIP(q)
+	c.addRegions(q)
 	u.RawQuery = q.Encode()
 
 	// Create HTTP request
@@ -211,4 +215,16 @@ func (c *ElchiClient) addNodeIP(q url.Values) {
 	if c.nodeIP != "" {
 		q.Set("node_ip", c.nodeIP)
 	}
+}
+
+// addRegions adds the regions query parameter if configured.
+// If regions is empty or contains only "all", no parameter is added (fetches all regions).
+func (c *ElchiClient) addRegions(q url.Values) {
+	if len(c.regions) == 0 {
+		return
+	}
+	if len(c.regions) == 1 && strings.EqualFold(c.regions[0], "all") {
+		return
+	}
+	q.Set("regions", strings.Join(c.regions, ","))
 }

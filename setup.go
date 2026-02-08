@@ -13,10 +13,11 @@ import (
 // Configuration defaults.
 const (
 	defaultTTL          = 300              // Default TTL in seconds (5 minutes)
-	defaultSyncInterval = 15 * time.Minute // Default sync interval
+	defaultSyncInterval = 5 * time.Minute  // Default sync interval
 	defaultTimeout      = 4 * time.Second  // Default HTTP timeout
 	defaultWebhookAddr  = ":8053"          // Default webhook server address
 	minSyncInterval     = 5 * time.Second  // Minimum allowed sync interval
+	maxSyncInterval     = 5 * time.Minute  // Maximum allowed sync interval
 	minTimeout          = 1 * time.Second  // Minimum allowed timeout
 	minSecretLength     = 8                // Minimum secret length for security
 )
@@ -106,6 +107,9 @@ func parseElchi(c *caddy.Controller) (*Elchi, error) {
 				if interval < minSyncInterval {
 					return nil, c.Errf("sync_interval must be at least %v", minSyncInterval)
 				}
+				if interval > maxSyncInterval {
+					return nil, c.Errf("sync_interval must be at most %v", maxSyncInterval)
+				}
 				e.SyncInterval = interval
 
 			case "timeout":
@@ -146,6 +150,16 @@ func parseElchi(c *caddy.Controller) (*Elchi, error) {
 					return nil, c.ArgErr()
 				}
 				e.NodeIP = c.Val()
+
+			case "regions":
+				// regions directive: filter DNS records by region
+				// Examples: "regions asya avrupa", "regions all"
+				// Empty or "all" means no filtering (fetch all records)
+				args := c.RemainingArgs()
+				if len(args) == 0 {
+					return nil, c.ArgErr()
+				}
+				e.Regions = args
 
 			default:
 				return nil, c.Errf("unknown directive '%s'", c.Val())

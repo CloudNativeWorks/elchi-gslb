@@ -25,8 +25,9 @@ This plugin answers queries for the configured zone from an in-memory cache that
 1. **On startup** (Initial bulk load):
    - Perform an **initial full snapshot** fetch from Elchi at:
      ```
-     GET {api_endpoint}/dns/snapshot?zone={zone}
+     GET {api_endpoint}/dns/snapshot?zone={zone}&regions={regions}
      ```
+   - The `regions` parameter is optional. If configured, only records matching the specified regions are returned.
    - The response includes:
      - `zone` (string) - DNS zone name
      - `version_hash` (string, opaque) - Hash for change detection
@@ -40,7 +41,7 @@ This plugin answers queries for the configured zone from an in-memory cache that
    - Each cycle:
      - Calls:
        ```
-       GET {api_endpoint}/dns/changes?zone={zone}&since={version_hash}
+       GET {api_endpoint}/dns/changes?zone={zone}&since={version_hash}&regions={regions}
        Header: X-Elchi-Secret: <secret>
        ```
 
@@ -165,6 +166,7 @@ Fetches the complete DNS snapshot for initial load.
 
 **Query Parameters:**
 - `zone` (required) - DNS zone name (e.g., `gslb.elchi`)
+- `regions` (optional) - Comma-separated list of regions to filter records (e.g., `asya,avrupa`)
 
 **Request Headers:**
 ```
@@ -197,6 +199,7 @@ Checks for DNS changes since a given version hash.
 **Query Parameters:**
 - `zone` (required)
 - `since` (required) - Last known version_hash
+- `regions` (optional) - Comma-separated list of regions to filter records (e.g., `asya,avrupa`)
 
 **Request Headers:** Same as snapshot
 

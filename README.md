@@ -31,6 +31,7 @@ The plugin answers DNS queries from a pre-built cache synchronized from an exter
     [sync_interval **DURATION**]
     [timeout **DURATION**]
     [webhook [**ADDRESS**]]
+    [regions **REGION** ...]
     [tls_skip_verify]
     [fallthrough [**ZONES**...]]
 }
@@ -43,6 +44,7 @@ The plugin answers DNS queries from a pre-built cache synchronized from an exter
 - **DURATION** is a Go duration string (e.g., `5m`, `30s`) for sync_interval or timeout
   - **sync_interval** specifies how often to check for changes (optional, default: `15m`, minimum: `5s`)
   - **timeout** specifies HTTP request timeout (optional, default: `4s`, minimum: `1s`)
+- **REGION** is one or more region names to filter DNS records (optional). Only records belonging to the specified regions will be fetched from the controller. Use `all` or omit the directive to fetch all regions. Examples: `regions asya avrupa`, `regions all`
 - **tls_skip_verify** skips TLS certificate verification (optional, for self-signed certificates)
 - **ADDRESS** is the webhook server listen address (optional, default: `:8053`)
 - **ZONES** are zones to fall through for (optional, defaults to all zones if fallthrough is enabled)
@@ -69,6 +71,7 @@ gslb.example.org:53 {
         endpoint http://elchi-backend:8080
         secret my-shared-secret
         node_ip {$NODE_IP}
+        regions asya avrupa
         ttl 300
         sync_interval 1m
         timeout 4s
@@ -181,8 +184,8 @@ DNS clients querying `service.asya-gslb.elchi` will receive a CNAME to `service.
 
 ### Sync Mechanism
 
-1. **Initial Load**: On startup, fetches complete DNS snapshot from `/dns/snapshot?zone={zone}`
-2. **Periodic Check**: Every 5 minutes (configurable), calls `/dns/changes?zone={zone}&since={hash}`
+1. **Initial Load**: On startup, fetches complete DNS snapshot from `/dns/snapshot?zone={zone}` (optionally filtered by `regions`)
+2. **Periodic Check**: Every 5 minutes (configurable), calls `/dns/changes?zone={zone}&since={hash}` (optionally filtered by `regions`)
 3. **Change Detection**: If hash differs, fetches new snapshot and replaces cache atomically
 4. **Query Handling**: DNS queries are answered from pre-built in-memory cache (no backend calls on hot path)
 
@@ -318,6 +321,7 @@ Fetches the complete DNS snapshot for a zone.
 
 **Query Parameters:**
 - `zone` (required) - DNS zone name (e.g., `gslb.elchi`)
+- `regions` (optional) - Comma-separated list of regions to filter records (e.g., `asya,avrupa`). If omitted, all records are returned.
 
 **Request Headers:**
 ```
@@ -371,6 +375,7 @@ Checks for DNS changes since a given version hash.
 **Query Parameters:**
 - `zone` (required) - DNS zone name
 - `since` (required) - Last known version_hash
+- `regions` (optional) - Comma-separated list of regions to filter records (e.g., `asya,avrupa`). If omitted, all records are returned.
 
 **Request Headers:** Same as `/dns/snapshot`
 

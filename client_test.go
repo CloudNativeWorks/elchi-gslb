@@ -46,7 +46,7 @@ func TestFetchSnapshot_Success(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", 5*time.Second, false)
+	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", nil, 5*time.Second, false)
 
 	// Fetch snapshot
 	ctx := context.Background()
@@ -75,7 +75,7 @@ func TestFetchSnapshot_HTTPError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", 5*time.Second, false)
+	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", nil, 5*time.Second, false)
 
 	ctx := context.Background()
 	_, err := client.FetchSnapshot(ctx)
@@ -93,7 +93,7 @@ func TestFetchSnapshot_InvalidJSON(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", 5*time.Second, false)
+	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", nil, 5*time.Second, false)
 
 	ctx := context.Background()
 	_, err := client.FetchSnapshot(ctx)
@@ -111,7 +111,7 @@ func TestFetchSnapshot_Timeout(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", 100*time.Millisecond, false)
+	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", nil, 100*time.Millisecond, false)
 
 	ctx := context.Background()
 	_, err := client.FetchSnapshot(ctx)
@@ -147,7 +147,7 @@ func TestCheckChanges_Unchanged(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", 5*time.Second, false)
+	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", nil, 5*time.Second, false)
 
 	ctx := context.Background()
 	changes, err := client.CheckChanges(ctx, "abc123")
@@ -182,7 +182,7 @@ func TestCheckChanges_Changed(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", 5*time.Second, false)
+	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", nil, 5*time.Second, false)
 
 	ctx := context.Background()
 	changes, err := client.CheckChanges(ctx, "abc123")
@@ -214,7 +214,7 @@ func TestSignRequest(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewElchiClient(server.URL, "gslb.elchi", "my-secret-key", "", 5*time.Second, false)
+	client := NewElchiClient(server.URL, "gslb.elchi", "my-secret-key", "", nil, 5*time.Second, false)
 
 	ctx := context.Background()
 	_, _ = client.FetchSnapshot(ctx)
@@ -227,4 +227,100 @@ func TestSignRequest(t *testing.T) {
 		t.Errorf("Expected Accept: application/json, got %s", accept)
 	}
 	// X-Elchi-Zone header removed - zone is sent via query parameter only
+}
+
+func TestFetchSnapshot_WithRegions(t *testing.T) {
+	var capturedQuery string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedQuery = r.URL.Query().Get("regions")
+		json.NewEncoder(w).Encode(DNSSnapshot{
+			Zone:        "gslb.elchi",
+			VersionHash: "abc123",
+			Records:     []DNSRecord{},
+		})
+	}))
+	defer server.Close()
+
+	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", []string{"asya", "avrupa"}, 5*time.Second, false)
+
+	ctx := context.Background()
+	_, err := client.FetchSnapshot(ctx)
+	if err != nil {
+		t.Fatalf("FetchSnapshot failed: %v", err)
+	}
+
+	if capturedQuery != "asya,avrupa" {
+		t.Errorf("Expected regions=asya,avrupa, got %s", capturedQuery)
+	}
+}
+
+func TestFetchSnapshot_WithAllRegion(t *testing.T) {
+	var capturedQuery string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedQuery = r.URL.Query().Get("regions")
+		json.NewEncoder(w).Encode(DNSSnapshot{
+			Zone:        "gslb.elchi",
+			VersionHash: "abc123",
+			Records:     []DNSRecord{},
+		})
+	}))
+	defer server.Close()
+
+	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", []string{"all"}, 5*time.Second, false)
+
+	ctx := context.Background()
+	_, err := client.FetchSnapshot(ctx)
+	if err != nil {
+		t.Fatalf("FetchSnapshot failed: %v", err)
+	}
+
+	if capturedQuery != "" {
+		t.Errorf("Expected no regions param for 'all', got %s", capturedQuery)
+	}
+}
+
+func TestFetchSnapshot_WithoutRegions(t *testing.T) {
+	var hasRegionsParam bool
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hasRegionsParam = r.URL.Query().Has("regions")
+		json.NewEncoder(w).Encode(DNSSnapshot{
+			Zone:        "gslb.elchi",
+			VersionHash: "abc123",
+			Records:     []DNSRecord{},
+		})
+	}))
+	defer server.Close()
+
+	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", nil, 5*time.Second, false)
+
+	ctx := context.Background()
+	_, err := client.FetchSnapshot(ctx)
+	if err != nil {
+		t.Fatalf("FetchSnapshot failed: %v", err)
+	}
+
+	if hasRegionsParam {
+		t.Error("Expected no regions query param when regions is nil")
+	}
+}
+
+func TestCheckChanges_WithRegions(t *testing.T) {
+	var capturedQuery string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedQuery = r.URL.Query().Get("regions")
+		w.WriteHeader(http.StatusNotModified)
+	}))
+	defer server.Close()
+
+	client := NewElchiClient(server.URL, "gslb.elchi", "test-secret", "", []string{"asya"}, 5*time.Second, false)
+
+	ctx := context.Background()
+	_, err := client.CheckChanges(ctx, "hash1")
+	if err != nil {
+		t.Fatalf("CheckChanges failed: %v", err)
+	}
+
+	if capturedQuery != "asya" {
+		t.Errorf("Expected regions=asya, got %s", capturedQuery)
+	}
 }
