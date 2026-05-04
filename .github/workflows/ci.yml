@@ -138,20 +138,19 @@ jobs:
       - name: Build CoreDNS with elchi plugin
         run: |
           cd coredns
-          # CoreDNS's plugin.cfg only takes effect AFTER `go generate`
-          # regenerates core/plugin/zplugin.go (and core/dnsserver/
-          # zdirectives.go) — the generator turns each "name:repo" line
-          # into a blank-import in zplugin.go that registers the plugin
-          # at link time. Without this step, plugin.cfg edits are silent
-          # no-ops and `go build` produces a vanilla CoreDNS binary
-          # (the elchi directive then surfaces only at runtime as
-          # "Unknown directive 'elchi'"). The stock Makefile does this
-          # in its `check` target; we replicate it inline to avoid the
-          # extra Make/Go-version/$GOFLAGS plumbing.
-          # See: coredns.go ("//go:generate go run directives_generate.go")
-          # and Makefile ("check: core/plugin/zplugin.go ...").
-          go generate coredns.go
-          CGO_ENABLED=0 go build -v -ldflags="-s -w" -o ../coredns-elchi
+          # Use upstream CoreDNS's stock Makefile — it does the full
+          # "plugin.cfg → zplugin.go → go.mod sync → build" dance and is
+          # the same path the Dockerfile takes (so Helm's image and our
+          # bare-metal binary come from one toolchain). The Makefile's
+          # `check` target runs `go generate coredns.go` followed by
+          # `go get` (which picks up zplugin.go's new blank-import and
+          # adds the matching require entry — without `go get` you hit
+          # "module ... is replaced but not required"). The `coredns`
+          # target then runs `go build` with -s -w + GitCommit ldflag.
+          # Defaults already match what we want: CGO_ENABLED?=0,
+          # BUILDOPTS?=-v.
+          make
+          cp coredns ../coredns-elchi
 
       - name: Verify binary includes elchi plugin
         run: |
