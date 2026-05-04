@@ -138,13 +138,38 @@ jobs:
       - name: Build CoreDNS with elchi plugin
         run: |
           cd coredns
+          # CoreDNS's plugin.cfg only takes effect AFTER `go generate`
+          # regenerates core/plugin/zplugin.go (and core/dnsserver/
+          # zdirectives.go) — the generator turns each "name:repo" line
+          # into a blank-import in zplugin.go that registers the plugin
+          # at link time. Without this step, plugin.cfg edits are silent
+          # no-ops and `go build` produces a vanilla CoreDNS binary
+          # (the elchi directive then surfaces only at runtime as
+          # "Unknown directive 'elchi'"). The stock Makefile does this
+          # in its `check` target; we replicate it inline to avoid the
+          # extra Make/Go-version/$GOFLAGS plumbing.
+          # See: coredns.go ("//go:generate go run directives_generate.go")
+          # and Makefile ("check: core/plugin/zplugin.go ...").
+          go generate coredns.go
           CGO_ENABLED=0 go build -v -ldflags="-s -w" -o ../coredns-elchi
 
-      - name: Verify binary
+      - name: Verify binary includes elchi plugin
         run: |
-          ./coredns-elchi -version || true
+          ./coredns-elchi -version
           file coredns-elchi
           ls -lh coredns-elchi
+          # Fail the job here if the plugin didn't actually compile in.
+          # `coredns-elchi -plugins` lists every registered plugin; if
+          # 'elchi' is missing, the release artifact would silently ship
+          # broken (the failure mode that motivated the go-generate step
+          # above). Surface it before upload.
+          if ! ./coredns-elchi -plugins 2>&1 | grep -qE '(^|/)elchi\b'; then
+            echo "::error::coredns-elchi binary does NOT include the elchi plugin"
+            echo "Available plugins:"
+            ./coredns-elchi -plugins 2>&1 | sed 's/^/  /'
+            exit 1
+          fi
+          echo "✓ elchi plugin registered in binary"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
