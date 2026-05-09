@@ -34,15 +34,14 @@ Every push to the main branch triggers the following **automated** workflow:
                    │
                    ▼
 ┌─────────────────────────────────────────────────────┐
-│  4. Docker Build & Push (Parallel)                 │
-│     ├─ AMD64 Image Build (GitHub Runner)           │
-│     └─ ARM64 Image Build (Self-hosted)             │
+│  4. Docker Build & Push                             │
+│     └─ AMD64 Image Build (GitHub Runner)           │
 └──────────────────┬──────────────────────────────────┘
                    │
                    ▼
 ┌─────────────────────────────────────────────────────┐
 │  5. Docker Manifest                                 │
-│     ├─ Multi-arch Manifest (v0.1.0)                │
+│     ├─ Versioned Tag (v0.1.0)                      │
 │     └─ Latest Tag Update                           │
 └─────────────────────────────────────────────────────┘
 ```
@@ -74,7 +73,7 @@ git push origin main
 1. ✅ Tests pass
 2. ✅ Build success
 3. ✅ Release v0.1.1 created
-4. ✅ Docker images built (AMD64 + ARM64)
+4. ✅ AMD64 Docker image built
 5. ✅ Pushed to Docker Hub
 
 ## Requirements
@@ -84,14 +83,6 @@ The following secrets must be defined in repository settings:
 
 - `DOCKER_USERNAME`: Docker Hub username
 - `DOCKER_PASSWORD`: Docker Hub access token
-
-### Self-hosted Runner (ARM64)
-A self-hosted runner is required for ARM64 builds:
-
-**Label**:
-- `self-hosted`
-
-If you don't have a self-hosted runner, you can temporarily change the ARM64 job in ci.yml to use ubuntu-22.04 (slower, uses QEMU emulation).
 
 ## Workflow Files
 
@@ -103,7 +94,7 @@ If you don't have a self-hosted runner, you can temporarily change the ARM64 job
 ✅ Fully automated - No user intervention required
 ✅ Prevents duplicate releases (version check)
 ✅ Release created only when VERSION changes
-✅ Multi-arch Docker images (AMD64 + ARM64)
+✅ AMD64 Docker images (linux/amd64)
 ✅ Integrated with GitHub Security (SARIF upload)
 ✅ Artifact uploads (binary downloads)
 
@@ -116,7 +107,3 @@ If you don't have a self-hosted runner, you can temporarily change the ARM64 job
 ### Docker push failed
 - Verify `DOCKER_USERNAME` and `DOCKER_PASSWORD` secrets
 - Verify repository exists on Docker Hub (`cloudnativeworks/elchi-coredns`)
-
-### ARM64 build failed
-- Check if self-hosted runner is running
-- Verify runner label is correct (`self-hosted`)
