@@ -1,5 +1,5 @@
 # CoreDNS version to use
-COREDNS_VERSION ?= v1.13.2
+COREDNS_VERSION ?= v1.14.3
 
 # Directories
 COREDNS_DIR = ./coredns

@@ -120,7 +120,7 @@ jobs:
 
       - name: Clone CoreDNS
         run: |
-          git clone --depth 1 --branch v1.13.2 https://github.com/coredns/coredns.git
+          git clone --depth 1 --branch v1.14.3 https://github.com/coredns/coredns.git
           cd coredns
 
       - name: Register plugin
@@ -330,7 +330,7 @@ jobs:
             echo ""
             echo "### CoreDNS Version"
             echo ""
-            echo "Built with CoreDNS v1.13.2"
+            echo "Built with CoreDNS v1.14.3"
             echo ""
             echo "### Documentation"
             echo ""
@@ -386,7 +386,7 @@ jobs:
           docker buildx build \
             --no-cache \
             --platform linux/amd64 \
-            --build-arg "COREDNS_VERSION=v1.13.2" \
+            --build-arg "COREDNS_VERSION=v1.14.3" \
             --build-arg "TARGETARCH=amd64" \
             -t "${IMAGE_TAG}" \
             -f Dockerfile \

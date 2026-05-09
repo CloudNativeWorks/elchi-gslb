@@ -61,18 +61,18 @@ git push origin main
 ### 2. Creating a Release
 ```bash
 # Update VERSION file
-echo "0.1.1" > VERSION
+echo "0.1.4" > VERSION
 
 # Commit and push
 git add VERSION
-git commit -m "chore: bump version to 0.1.1"
+git commit -m "chore: bump version to 0.1.4"
 git push origin main
 ```
 
 **Result**: Full pipeline executes:
 1. ✅ Tests pass
 2. ✅ Build success
-3. ✅ Release v0.1.1 created
+3. ✅ Release v0.1.4 created
 4. ✅ AMD64 Docker image built
 5. ✅ Pushed to Docker Hub
 

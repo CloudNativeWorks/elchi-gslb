@@ -236,7 +236,7 @@ make setup
 ```
 
 This will:
-- Clone CoreDNS v1.13.2 into `./coredns/`
+- Clone CoreDNS v1.14.3 into `./coredns/`
 - Create `Corefile` from `Corefile.example`
 - Download Go dependencies
 
